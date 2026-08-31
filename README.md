@@ -22,6 +22,9 @@ ambxst mods enable community.keyboard-layout-indicator
 ambxst reload
 ```
 
+Every package lives here. `community.i18n` used to have a repository of its own;
+that mirror is retired and its packages now point back at this directory.
+
 New packages are installed disabled. Review the manifest, permissions, and patch
 before enabling one. UI packages require `community.i18n`; the details pane marks
 it as missing, disabled, or ready. **Install required mods** downloads and enables

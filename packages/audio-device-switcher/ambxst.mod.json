@@ -20,7 +20,7 @@
     "community.i18n"
   ],
   "dependencySources": {
-    "community.i18n": "https://github.com/flathead/ambxst-mod-i18n.git"
+    "community.i18n": "https://github.com/flathead/ambxst-mods/tree/main/packages/i18n"
   },
   "permissions": [
     "Reads PipeWire devices and changes the default audio source or sink"

@@ -20,7 +20,7 @@
     "community.i18n"
   ],
   "dependencySources": {
-    "community.i18n": "https://github.com/flathead/ambxst-mod-i18n.git"
+    "community.i18n": "https://github.com/flathead/ambxst-mods/tree/main/packages/i18n"
   },
   "permissions": [
     "Reads system resource metrics from the existing Ambxst backend service"
