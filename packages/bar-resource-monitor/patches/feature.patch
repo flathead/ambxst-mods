@@ -1,9 +1,11 @@
 diff --git a/config/Config.qml b/config/Config.qml
-index 41436c75..9845a052 100644
+index f20b12ef..a2bd65a7 100644
 --- a/config/Config.qml
 +++ b/config/Config.qml
-@@ -1051,2 +1051,19 @@ Singleton {
+@@ -1051,6 +1051,23 @@ Singleton {
+                 property bool syncSpotify: false
              }
+             property string language: "auto"
 +            property JsonObject resources: JsonObject {
 +                property bool enabled: true
 +                property string location: "dashboard"
@@ -22,11 +24,15 @@ index 41436c75..9845a052 100644
 +                }
 +            }
          }
+     }
+ 
 diff --git a/config/defaults/system.js b/config/defaults/system.js
-index 07d6e187..580adbbd 100644
+index 79c2e77c..4ff68c6e 100644
 --- a/config/defaults/system.js
 +++ b/config/defaults/system.js
-@@ -46,2 +46,19 @@ var data = {
+@@ -45,5 +45,22 @@ var data = {
+         "restTime": 300,
+         "autoStart": false,
          "syncSpotify": false
 +    },
 +    "resources": {
@@ -46,11 +52,14 @@ index 07d6e187..580adbbd 100644
 +            "barTemp": true
 +        }
      }
+ }
 diff --git a/modules/bar/BarContent.qml b/modules/bar/BarContent.qml
-index b9e57ca7..ce6f6329 100644
+index c3a0f591..f53e462e 100644
 --- a/modules/bar/BarContent.qml
 +++ b/modules/bar/BarContent.qml
-@@ -195,2 +195,8 @@ Item {
+@@ -193,6 +193,12 @@ Item {
+     // Shadow logic for bar components
+     readonly property bool shadowsEnabled: Config.showBackground && (!actualContainBar || (Config.bar && Config.bar.keepBarShadow !== undefined ? Config.bar.keepBarShadow : false))
  
 +    // Resource monitor placement — top-level bindings ensure reactive updates on config change
 +    readonly property bool resourceMonitorEnabled: Config.system.resources ? Config.system.resources.enabled !== false : false
@@ -59,7 +68,11 @@ index b9e57ca7..ce6f6329 100644
 +    readonly property bool resourceMonitorRight: resourceMonitorInBar && !resourceMonitorLeft
 +
      // The hitbox for the mask
-@@ -461,2 +467,15 @@ Item {
+     property alias barHitbox: barMouseArea
+ 
+@@ -459,6 +465,19 @@ Item {
+                             }
+                         }
  
 +                        // Resource Monitor — left position (after pin button)
 +                        Loader {
@@ -75,7 +88,11 @@ index b9e57ca7..ce6f6329 100644
 +                        }
 +
                          Item {
-@@ -501,2 +520,15 @@ Item {
+                             Layout.fillWidth: true
+                             Layout.fillHeight: true
+@@ -499,6 +518,19 @@ Item {
+                             visible: !(root.orientation === "horizontal" && integratedDockEnabled)
+                         }
  
 +                        // Resource Monitor — right position (before presets)
 +                        Loader {
@@ -91,7 +108,11 @@ index b9e57ca7..ce6f6329 100644
 +                        }
 +
                          PresetsButton {
-@@ -594,2 +626,15 @@ Item {
+                             id: presetsButton
+                             startRadius: root.dockAtEnd ? root.innerRadius : root.outerRadius
+@@ -592,6 +624,19 @@ Item {
+                             enableShadow: root.shadowsEnabled
+                         }
  
 +                        // Resource Monitor — top position (barSide = left)
 +                        Loader {
@@ -107,7 +128,11 @@ index b9e57ca7..ce6f6329 100644
 +                        }
 +
                          // Center Group Container
-@@ -729,2 +774,15 @@ Item {
+                         Item {
+                             Layout.fillHeight: true
+@@ -727,6 +772,19 @@ Item {
+                             }
+                         }
  
 +                        // Resource Monitor — bottom position (barSide = right)
 +                        Loader {
@@ -123,6 +148,8 @@ index b9e57ca7..ce6f6329 100644
 +                        }
 +
                          ControlsButton {
+                             id: controlsButtonVert
+                             bar: root
 diff --git a/modules/bar/BarResourceMonitor.qml b/modules/bar/BarResourceMonitor.qml
 new file mode 100644
 index 00000000..535494bb
@@ -835,17 +862,23 @@ diff --git a/modules/components/SegmentedSwitch.qml b/modules/components/Segment
 index 8c1e31b5..d8cfe9fa 100644
 --- a/modules/components/SegmentedSwitch.qml
 +++ b/modules/components/SegmentedSwitch.qml
-@@ -76,4 +76,4 @@ StyledRect {
+@@ -74,8 +74,8 @@ StyledRect {
+                     required property int index
+ 
                      Layout.fillHeight: true
 +                    Layout.fillWidth: true
                      Layout.minimumWidth: root.buttonSize
 -                    Layout.preferredWidth: contentRow.implicitWidth + 16 // Add some padding
  
+                     focusPolicy: Qt.NoFocus
+                     hoverEnabled: true
 diff --git a/modules/services/SystemResources.qml b/modules/services/SystemResources.qml
 index f14ab811..def2c20e 100644
 --- a/modules/services/SystemResources.qml
 +++ b/modules/services/SystemResources.qml
-@@ -58,5 +58,8 @@ Singleton {
+@@ -56,9 +56,12 @@ Singleton {
+ 
+     property int subscriptionHandle: -1
  
 -    // Subscription only lives while the dashboard Metrics tab is open,
 -    // preserving the original resource-saving behaviour (no dGPU polling).
@@ -857,11 +890,15 @@ index f14ab811..def2c20e 100644
 +            || Config.system.resources?.location === "both")
 +        && root.validDisks.length > 0
  
+     onMonitoringActiveChanged: {
+         if (monitoringActive) activateMonitor();
 diff --git a/modules/widgets/dashboard/Dashboard.qml b/modules/widgets/dashboard/Dashboard.qml
 index 6b60935c..6c1e633f 100644
 --- a/modules/widgets/dashboard/Dashboard.qml
 +++ b/modules/widgets/dashboard/Dashboard.qml
-@@ -25,4 +25,14 @@ NotchAnimationBehavior {
+@@ -23,8 +23,18 @@ NotchAnimationBehavior {
+         property int currentTab: GlobalStates.dashboardCurrentTab
+     }
  
 -    readonly property var tabModel: [Icons.widgets, Icons.wallpapers, Icons.heartbeat]
 +    readonly property bool resourcesInDashboard: !(Config.system.resources && Config.system.resources.location === "bar")
@@ -877,7 +914,11 @@ index 6b60935c..6c1e633f 100644
 +            stack.navigateToTab(0);
 +    }
      readonly property int tabSpacing: 8
-@@ -457,5 +467,6 @@ NotchAnimationBehavior {
+ 
+     readonly property int tabWidth: 48
+@@ -455,9 +465,10 @@ NotchAnimationBehavior {
+                     z: visible ? 1 : 0
+                 }
  
 -                // Tab 2: Metrics
 +                // Tab 2: Metrics (only when resources are displayed in dashboard, not bar)
@@ -885,11 +926,15 @@ index 6b60935c..6c1e633f 100644
                      property int index: 2
 +                    active: (root.shouldTabBeLoaded(index) || root.state.currentTab === index) && root.resourcesInDashboard
                      sourceComponent: metricsComponent
+                     z: visible ? 1 : 0
+                 }
 diff --git a/modules/widgets/dashboard/controls/SystemPanel.qml b/modules/widgets/dashboard/controls/SystemPanel.qml
-index 144db9b7..f15517dd 100644
+index 288be77b..7c298ece 100644
 --- a/modules/widgets/dashboard/controls/SystemPanel.qml
 +++ b/modules/widgets/dashboard/controls/SystemPanel.qml
-@@ -19,2 +19,12 @@ Item {
+@@ -18,6 +18,16 @@ Item {
+ 
+     property string currentSection: ""
  
 +    // I18n helper — returns English fallback when I18n is unavailable or key missing
 +    function tr(key, fallback) {
@@ -902,7 +947,11 @@ index 144db9b7..f15517dd 100644
 +    }
 +
      component SectionButton: StyledRect {
-@@ -63,2 +73,49 @@ Item {
+         id: sectionBtn
+         required property string text
+@@ -62,6 +72,53 @@ Item {
+         }
+     }
  
 +    // Option selector — same visual style as ShellPanel/CompositorPanel
 +    component SelectorRow: RowLayout {
@@ -952,8 +1001,12 @@ index 144db9b7..f15517dd 100644
 +    }
 +
      // Main content
-@@ -86,17 +143,30 @@ Item {
-                     title: root.currentSection === "" ? "System" : (root.currentSection === "system" ? "System Resources" : (root.currentSection.charAt(0).toUpperCase() + root.currentSection.slice(1)))
+     Flickable {
+         id: mainFlickable
+@@ -85,21 +142,34 @@ Item {
+                     width: root.contentWidth
+                     anchors.horizontalCenter: parent.horizontalCenter
+                     title: root.currentSection === "" ? I18n.t("settings.system") : (root.currentSection === "system" ? I18n.t("settings.system.resources") : I18n.t("settings.system." + root.currentSection))
 -                    statusText: ""
 +                    statusText: {
 +                        if (root.currentSection === "system") {
@@ -972,7 +1025,7 @@ index 144db9b7..f15517dd 100644
 -                            return [
 -                                {
 -                                    icon: Icons.arrowLeft,
--                                    tooltip: "Back",
+-                                    tooltip: I18n.t("common.back"),
 -                                    onClicked: function () {
 -                                        root.currentSection = "";
 -                                    }
@@ -980,7 +1033,7 @@ index 144db9b7..f15517dd 100644
 -                            ];
 +                            acts.push({
 +                                icon: Icons.arrowLeft,
-+                                tooltip: "Back",
++                                tooltip: I18n.t("common.back"),
 +                                onClicked: function () { root.currentSection = ""; }
 +                            });
 +                        }
@@ -994,16 +1047,29 @@ index 144db9b7..f15517dd 100644
 -                        return [];
 +                        return acts;
                      }
-@@ -442,4 +512,4 @@ Item {
+                 }
+             }
+@@ -148,7 +218,7 @@ Item {
+                             sectionId: "idle"
+                         }
+                         SectionButton {
+-                            text: "Terminal"
++                            text: I18n.t("system.terminal.title")
+                             sectionId: "terminal"
+                         }
+                     }
+@@ -539,157 +609,535 @@ Item {
+                     // SYSTEM SECTION
+                     // =====================
                      ColumnLayout {
 +                        id: systemSection
                          visible: root.currentSection === "system"
 -                        property string settingsSection: "system"
                          Layout.fillWidth: true
-@@ -447,68 +517,351 @@ Item {
+                         spacing: 8
  
 -                        Text {
--                            text: "System Resources"
+-                            text: I18n.t("settings.system.resources")
 -                            font.family: Config.theme.font
 -                            font.pixelSize: Styling.fontSize(-1)
 -                            font.weight: Font.Medium
@@ -1046,7 +1112,7 @@ index 144db9b7..f15517dd 100644
                          }
  
 -                        Text {
--                            text: "Configure which disks to monitor"
+-                            text: I18n.t("system.resources.description")
 -                            font.family: Config.theme.font
 -                            font.pixelSize: Styling.fontSize(-2)
 -                            color: Colors.overSurfaceVariant
@@ -1068,8 +1134,9 @@ index 144db9b7..f15517dd 100644
 +                            resShowBarDisk = show ? show.barDisk !== false : true;
 +                            resShowDashTemp = show ? show.dashTemp !== false : true;
 +                            resShowBarTemp = show ? show.barTemp !== false : true;
-+                        }
-+
+                         }
+ 
+-                        // Disks list
 +                        function saveToConfig() {
 +                            const res = Config.system.resources;
 +                            if (!res) return;
@@ -1099,9 +1166,8 @@ index 144db9b7..f15517dd 100644
 +                            id: savedTimer
 +                            interval: 2000
 +                            onTriggered: systemSection.savedSuccess = false
-                         }
- 
--                        // Disks list
++                        }
++
 +                        // ── Global enable toggle ──────────────────────────────
 +                        ToggleRow {
 +                            Layout.fillWidth: true
@@ -1117,14 +1183,21 @@ index 144db9b7..f15517dd 100644
 +                            spacing: 8
 +                            enabled: systemSection.resEnabled
 +                            opacity: systemSection.resEnabled ? 1.0 : 0.4
-+
+ 
+-                            Repeater {
+-                                id: disksRepeater
+-                                model: Config.system.disks
 +                            Behavior on opacity {
 +                                enabled: Config.animDuration > 0
 +                                NumberAnimation { duration: Config.animDuration / 2 }
 +                            }
-+
+ 
+-                                delegate: RowLayout {
+-                                    id: diskRow
+-                                    required property string modelData
+-                                    required property int index
 +                            Text {
-+                                text: "System Resources"
++                                text: I18n.t("settings.system.system_resources")
 +                                font.family: Config.theme.font
 +                                font.pixelSize: Styling.fontSize(-1)
 +                                font.weight: Font.Medium
@@ -1150,10 +1223,7 @@ index 144db9b7..f15517dd 100644
 +                                Layout.topMargin: 4
 +                                Layout.bottomMargin: -4
 +                            }
- 
--                            Repeater {
--                                id: disksRepeater
--                                model: Config.system.disks
++
 +                            SelectorRow {
 +                                options: [
 +                                    { label: root.tr("system.resources.location_dashboard", "Dashboard"), value: "dashboard" },
@@ -1163,11 +1233,7 @@ index 144db9b7..f15517dd 100644
 +                                value: systemSection.resLocation
 +                                onValueSelected: newValue => { systemSection.resLocation = newValue; }
 +                            }
- 
--                                delegate: RowLayout {
--                                    id: diskRow
--                                    required property string modelData
--                                    required property int index
++
 +                            // ── Bar Side (visible only when location includes bar) ───
 +                            Text {
 +                                visible: systemSection.resLocation === "bar" || systemSection.resLocation === "both"
@@ -1179,7 +1245,7 @@ index 144db9b7..f15517dd 100644
 +                                Layout.topMargin: 4
 +                                Layout.bottomMargin: -4
 +                            }
- 
++
 +                            SelectorRow {
 +                                visible: systemSection.resLocation === "bar" || systemSection.resLocation === "both"
 +                                options: [
@@ -1206,7 +1272,7 @@ index 144db9b7..f15517dd 100644
 +                                Layout.fillWidth: true
 +                                spacing: 4
 +                                visible: systemSection.resLocation !== "bar"
-+
+ 
 +                                Text {
 +                                    visible: systemSection.resLocation === "both"
 +                                    text: root.tr("system.resources.location_dashboard", "Dashboard")
@@ -1377,7 +1443,7 @@ index 144db9b7..f15517dd 100644
                                              Text {
 -                                                anchors.verticalCenter: parent.verticalCenter
 -                                                visible: !diskInput.text && !diskInput.activeFocus
--                                                text: "e.g. /, /home..."
+-                                                text: I18n.t("system.disk_path_placeholder")
 -                                                font: diskInput.font
 -                                                color: Colors.overSurfaceVariant
 +                                                id: visBtnBarLabel
@@ -1402,7 +1468,7 @@ index 144db9b7..f15517dd 100644
 +                                                    else if (visBtnBar.modelData.key === "disk") systemSection.resShowBarDisk = !systemSection.resShowBarDisk;
 +                                                }
                                              }
-@@ -516,29 +869,94 @@ Item {
+                                         }
                                      }
 +                                }
  
@@ -1516,16 +1582,16 @@ index 144db9b7..f15517dd 100644
 +                                                Text {
 +                                                    anchors.verticalCenter: parent.verticalCenter
 +                                                    visible: !diskInput.text && !diskInput.activeFocus
-+                                                    text: "e.g. /, /home..."
++                                                    text: I18n.t("system.resources.disk_placeholder")
 +                                                    font: diskInput.font
 +                                                    color: Colors.overSurfaceVariant
 +                                                }
                                              }
-@@ -546,5 +964,35 @@ Item {
+                                         }
  
 -                                        StyledToolTip {
 -                                            visible: removeDiskArea.containsMouse
--                                            tooltipText: "Remove disk"
+-                                            tooltipText: I18n.t("system.remove_disk")
 +                                        // Remove button
 +                                        StyledRect {
 +                                            id: removeDiskButton
@@ -1560,7 +1626,7 @@ index 144db9b7..f15517dd 100644
 +                                                tooltipText: "Remove disk"
 +                                            }
                                          }
-@@ -552,43 +1000,43 @@ Item {
+                                     }
                                  }
 -                            }
  
@@ -1604,13 +1670,13 @@ index 144db9b7..f15517dd 100644
 +                                        }
  
 -                                    Text {
--                                        text: "Add Disk"
+-                                        text: I18n.t("system.add_disk")
 -                                        font.family: Config.theme.font
 -                                        font.pixelSize: Styling.fontSize(0)
 -                                        color: addDiskButton.item
 -                                        anchors.verticalCenter: parent.verticalCenter
 +                                        Text {
-+                                            text: "Add Disk"
++                                            text: I18n.t("system.resources.add_disk")
 +                                            font.family: Config.theme.font
 +                                            font.pixelSize: Styling.fontSize(0)
 +                                            color: addDiskButton.item
@@ -1639,11 +1705,71 @@ index 144db9b7..f15517dd 100644
 +                                            Config.system.disks = newDisks;
 +                                        }
                                      }
+                                 }
+                             }
+@@ -909,7 +1357,7 @@ Item {
+                         spacing: 8
+ 
+                         Text {
+-                            text: "Terminal"
++                            text: I18n.t("system.terminal.title")
+                             font.family: Config.theme.font
+                             font.pixelSize: Styling.fontSize(-1)
+                             font.weight: Font.Medium
+@@ -918,7 +1366,7 @@ Item {
+                         }
+ 
+                         Text {
+-                            text: "Ambxst uses your terminal to launch the tmux manager and to show update progress."
++                            text: I18n.t("system.terminal.description")
+                             font.family: Config.theme.font
+                             font.pixelSize: Styling.fontSize(-2)
+                             color: Colors.overSurfaceVariant
+@@ -928,7 +1376,7 @@ Item {
+                         }
+ 
+                         TextInputRow {
+-                            label: "Terminal"
++                            label: I18n.t("system.terminal.title")
+                             variant: "bg"
+                             value: Config.general.terminal ?? "kitty"
+                             placeholder: "foot, kitty, ghostty, alacritty, wezterm…"
+@@ -953,8 +1401,8 @@ Item {
+                                 spacing: 8
+ 
+                                 ToggleRow {
+-                                    label: "Advanced options"
+-                                    description: "Use a custom command template for terminals that don't accept the standard `-e` flag"
++                                    label: I18n.t("system.terminal.advanced")
++                                    description: I18n.t("system.terminal.advanced_description")
+                                     checked: Config.general.terminalAdvanced ?? false
+                                     onToggled: checked => {
+                                         if (checked !== Config.general.terminalAdvanced) {
+@@ -979,7 +1427,7 @@ Item {
+                                     }
+ 
+                                     TextInputRow {
+-                                        label: "Open with"
++                                        label: I18n.t("system.terminal.open_with")
+                                         variant: "bg"
+                                         value: Config.general.terminalCommand ?? "$TERMINAL -e $COMMAND"
+                                         placeholder: "$TERMINAL -e $COMMAND"
+@@ -991,7 +1439,7 @@ Item {
+                                     }
+ 
+                                     Text {
+-                                        text: "Examples: \"$TERMINAL -e $COMMAND\" · \"gnome-terminal -- $COMMAND\" · \"konsole -e $COMMAND\""
++                                        text: I18n.t("system.terminal.examples")
+                                         font.family: Config.theme.font
+                                         font.pixelSize: Styling.fontSize(-3)
+                                         color: Colors.overSurfaceVariant
 diff --git a/modules/widgets/dashboard/metrics/MetricsTab.qml b/modules/widgets/dashboard/metrics/MetricsTab.qml
-index 97b91b37..2d8d5bcb 100644
+index 6c3197b9..94cd481d 100644
 --- a/modules/widgets/dashboard/metrics/MetricsTab.qml
 +++ b/modules/widgets/dashboard/metrics/MetricsTab.qml
-@@ -24,2 +24,9 @@ Rectangle {
+@@ -22,6 +22,13 @@ Rectangle {
+     property var linuxLogos: null
+     property real chartZoom: 1.0
  
 +    // Dashboard-specific visibility from config
 +    readonly property bool showCpu:  Config.system.resources && Config.system.resources.show ? Config.system.resources.show.cpu  !== false : true
@@ -1653,45 +1779,81 @@ index 97b91b37..2d8d5bcb 100644
 +    readonly property bool showTemp: Config.system.resources && Config.system.resources.show ? Config.system.resources.show.dashTemp !== false : true
 +
      // Adjust history points based on zoom and repaint chart
-@@ -370,2 +377,3 @@ Rectangle {
+     onChartZoomChanged: {
+         // Store enough history to support zoom out
+@@ -368,6 +375,7 @@ Rectangle {
+                         Column {
+                             width: parent.width
                              spacing: 4
 +                            visible: root.showCpu
  
-@@ -405,3 +413,3 @@ Rectangle {
+                             ResourceItem {
+                                 width: parent.width
+@@ -403,7 +411,7 @@ Rectangle {
+                                 }
+ 
                                  Text {
 -                                    visible: SystemResources.cpuTemp >= 0
 +                                    visible: root.showTemp && SystemResources.cpuTemp >= 0
                                      text: Icons.temperature
-@@ -413,3 +421,3 @@ Rectangle {
+                                     font.family: Icons.font
+                                     font.pixelSize: Styling.fontSize(-2)
+@@ -411,7 +419,7 @@ Rectangle {
+                                 }
+ 
                                  Text {
 -                                    visible: SystemResources.cpuTemp >= 0
 +                                    visible: root.showTemp && SystemResources.cpuTemp >= 0
                                      text: `${SystemResources.cpuTemp}°`
-@@ -427,2 +435,3 @@ Rectangle {
+                                     font.family: Config.theme.font
+                                     font.pixelSize: Styling.fontSize(-2)
+@@ -425,6 +433,7 @@ Rectangle {
+                         Column {
+                             width: parent.width
                              spacing: 4
 +                            visible: root.showRam
  
-@@ -470,3 +479,3 @@ Rectangle {
+                             ResourceItem {
+                                 width: parent.width
+@@ -468,7 +477,7 @@ Rectangle {
+                         // GPUs (if detected) - show one bar per GPU
+                         Repeater {
                              id: gpuRepeater
 -                            model: SystemResources.gpuDetected ? SystemResources.gpuCount : 0
 +                            model: (root.showGpu && SystemResources.gpuDetected) ? SystemResources.gpuCount : 0
  
-@@ -537,3 +546,3 @@ Rectangle {
+                             Column {
+                                 required property int index
+@@ -535,7 +544,7 @@ Rectangle {
+                                     }
+ 
                                      Text {
 -                                        visible: (SystemResources.gpuTemps[index] ?? -1) >= 0
 +                                        visible: root.showTemp && (SystemResources.gpuTemps[index] ?? -1) >= 0
                                          text: Icons.temperature
-@@ -557,3 +566,3 @@ Rectangle {
+                                         font.family: Icons.font
+                                         font.pixelSize: Styling.fontSize(-2)
+@@ -555,7 +564,7 @@ Rectangle {
+                                     }
+ 
                                      Text {
 -                                        visible: (SystemResources.gpuTemps[index] ?? -1) >= 0
 +                                        visible: root.showTemp && (SystemResources.gpuTemps[index] ?? -1) >= 0
                                          text: `${SystemResources.gpuTemps[index]}°`
-@@ -571,3 +580,3 @@ Rectangle {
+                                         font.family: Config.theme.font
+                                         font.pixelSize: Styling.fontSize(-2)
+@@ -569,7 +578,7 @@ Rectangle {
+                         // Disks
+                         Repeater {
                              id: diskRepeater
 -                            model: SystemResources.validDisks
 +                            model: root.showDisk ? SystemResources.validDisks : []
  
-@@ -783,9 +792,11 @@ Rectangle {
+                             Column {
+                                 required property string modelData
+@@ -781,13 +790,15 @@ Rectangle {
+                             }
+ 
                              // Draw CPU line (red)
 -                            drawLine(SystemResources.cpuHistory, Colors.red);
 +                            if (root.showCpu)
@@ -1706,3 +1868,5 @@ index 97b91b37..2d8d5bcb 100644
 -                            if (SystemResources.gpuDetected && SystemResources.gpuCount > 0) {
 +                            if (root.showGpu && SystemResources.gpuDetected && SystemResources.gpuCount > 0) {
                                  for (let i = 0; i < SystemResources.gpuCount; i++) {
+                                     if (SystemResources.gpuHistories[i] && SystemResources.gpuHistories[i].length > 0) {
+                                         // Get vendor-specific color

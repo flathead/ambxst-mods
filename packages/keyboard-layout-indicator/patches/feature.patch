@@ -1,16 +1,22 @@
 diff --git a/config/Config.qml b/config/Config.qml
-index 41436c75..e7a96a25 100644
+index f20b12ef..b801d71d 100644
 --- a/config/Config.qml
 +++ b/config/Config.qml
-@@ -548,2 +548,3 @@ Singleton {
+@@ -546,6 +546,7 @@ Singleton {
+             property bool showPinButton: true
+             property bool availableOnFullscreen: false
              property bool use12hFormat: false
 +            property bool showKeyboardLayout: true
              property bool containBar: false
+             property bool keepBarShadow: false
+             property bool keepBarBorder: false
 diff --git a/modules/bar/BarContent.qml b/modules/bar/BarContent.qml
-index b9e57ca7..cde4553c 100644
+index c3a0f591..8c3f849b 100644
 --- a/modules/bar/BarContent.qml
 +++ b/modules/bar/BarContent.qml
-@@ -530,2 +530,16 @@ Item {
+@@ -528,6 +528,20 @@ Item {
+                             endRadius: root.innerRadius
+                         }
  
 +                        Loader {
 +                            active: (Config.bar.showKeyboardLayout ?? true) && KeyboardLayoutService.availableLayouts.length > 1
@@ -27,7 +33,11 @@ index b9e57ca7..cde4553c 100644
 +                        }
 +
                          Bar.BatteryIndicator {
-@@ -737,2 +751,17 @@ Item {
+                             id: batteryIndicator
+                             bar: root
+@@ -735,6 +749,21 @@ Item {
+                             endRadius: root.innerRadius
+                         }
  
 +                        Loader {
 +                            active: (Config.bar.showKeyboardLayout ?? true) && KeyboardLayoutService.availableLayouts.length > 1
@@ -45,6 +55,8 @@ index b9e57ca7..cde4553c 100644
 +                        }
 +
                          Bar.BatteryIndicator {
+                             id: batteryIndicatorVert
+                             bar: root
 diff --git a/modules/bar/KeyboardLayoutIndicator.qml b/modules/bar/KeyboardLayoutIndicator.qml
 new file mode 100644
 index 00000000..d110ac02
@@ -447,21 +459,27 @@ index 00000000..84d4d524
 +    }
 +}
 diff --git a/modules/widgets/dashboard/controls/SettingsIndex.qml b/modules/widgets/dashboard/controls/SettingsIndex.qml
-index 6a606409..48a066e6 100644
+index 4e6a1574..ee5ea653 100644
 --- a/modules/widgets/dashboard/controls/SettingsIndex.qml
 +++ b/modules/widgets/dashboard/controls/SettingsIndex.qml
-@@ -158,2 +158,3 @@ QtObject {
-         { label: "Firefox Player", keywords: "browser media music", section: 8, subSection: "bar", subLabel: "Ambxst > Bar", icon: Icons.layout, isIcon: true },
-+        { label: "Keyboard Layout", keywords: "language input switch layout keyboard locale xkb", section: 8, subSection: "bar", subLabel: "Ambxst > Bar", icon: Icons.globe, isIcon: true },
-         { label: "Bar Auto-hide", keywords: "autohide hide show reveal", section: 8, subSection: "bar", subLabel: "Ambxst > Bar", icon: Icons.layout, isIcon: true },
+@@ -158,6 +158,7 @@ QtObject {
+         { label: I18n.t("settings.shell.launcher_icon_size"), keywords: "width height pixels", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
+         { label: I18n.t("settings.shell.pill_style"), keywords: "squished roundness radius bar", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
+         { label: I18n.t("settings.shell.firefox_player"), keywords: "browser media music", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
++        { label: I18n.t("shell.show_keyboard_layout"), keywords: "language input switch layout keyboard locale xkb", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.globe, isIcon: true },
+         { label: I18n.t("settings.shell.bar_autohide"), keywords: "autohide hide show reveal", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
+         { label: I18n.t("settings.shell.pinned_on_startup"), keywords: "show visible default", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
+         { label: I18n.t("settings.shell.hover_to_reveal"), keywords: "mouse show hide edge", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
 diff --git a/modules/widgets/dashboard/controls/ShellPanel.qml b/modules/widgets/dashboard/controls/ShellPanel.qml
-index d02bf8cf..f06d0adf 100644
+index b9586b66..fac5cabd 100644
 --- a/modules/widgets/dashboard/controls/ShellPanel.qml
 +++ b/modules/widgets/dashboard/controls/ShellPanel.qml
-@@ -813,2 +813,13 @@ Item {
+@@ -812,6 +812,17 @@ Item {
+                             }
+                         }
  
 +                        ToggleRow {
-+                            label: "Show Keyboard Layout"
++                            label: I18n.t("shell.show_keyboard_layout")
 +                            checked: Config.bar.showKeyboardLayout ?? true
 +                            onToggled: value => {
 +                                if (value !== Config.bar.showKeyboardLayout) {
@@ -472,3 +490,5 @@ index d02bf8cf..f06d0adf 100644
 +                        }
 +
                          Separator {
+                             Layout.fillWidth: true
+                         }

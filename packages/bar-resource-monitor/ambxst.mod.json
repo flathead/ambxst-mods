@@ -12,6 +12,10 @@
     "ambxst": ">=1.2.5 <1.3.0",
     "testedBaseCommits": ["8f00dbaa831824e24af3a1644d32ae465acc60ea"]
   },
+  "dependencies": ["community.i18n"],
+  "dependencySources": {
+    "community.i18n": "https://github.com/flathead/ambxst-mod-i18n.git"
+  },
   "permissions": ["Reads system resource metrics from the existing Ambxst backend service"],
   "operations": [{"type": "patch", "source": "patches/feature.patch"}]
 }

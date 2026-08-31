@@ -1,15 +1,19 @@
 diff --git a/config/Config.qml b/config/Config.qml
-index 41436c75..1f5dbfe2 100644
+index f20b12ef..af03982d 100644
 --- a/config/Config.qml
 +++ b/config/Config.qml
-@@ -548,2 +548,4 @@ Singleton {
+@@ -546,6 +546,8 @@ Singleton {
+             property bool showPinButton: true
+             property bool availableOnFullscreen: false
              property bool use12hFormat: false
 +            property bool showAudioDeviceSwitcher: true
 +            property list<string> excludedAudioSinks: []
              property bool containBar: false
+             property bool keepBarShadow: false
+             property bool keepBarBorder: false
 diff --git a/modules/bar/AudioDeviceSwitcher.qml b/modules/bar/AudioDeviceSwitcher.qml
 new file mode 100644
-index 00000000..fc0d84b1
+index 00000000..69853da7
 --- /dev/null
 +++ b/modules/bar/AudioDeviceSwitcher.qml
 @@ -0,0 +1,490 @@
@@ -322,7 +326,7 @@ index 00000000..fc0d84b1
 +                Layout.leftMargin: 8
 +                Layout.topMargin: 4
 +                Layout.bottomMargin: 2
-+                text: "Output"
++                text: I18n.t("mixer.output")
 +                font.family: Styling.defaultFont
 +                font.pixelSize: Styling.fontSize(-1)
 +                font.bold: true
@@ -419,7 +423,7 @@ index 00000000..fc0d84b1
 +            Text {
 +                Layout.leftMargin: 8
 +                Layout.bottomMargin: 2
-+                text: "Input"
++                text: I18n.t("mixer.input")
 +                font.family: Styling.defaultFont
 +                font.pixelSize: Styling.fontSize(-1)
 +                font.bold: true
@@ -504,10 +508,12 @@ index 00000000..fc0d84b1
 +    }
 +}
 diff --git a/modules/bar/BarContent.qml b/modules/bar/BarContent.qml
-index b9e57ca7..7a1055ce 100644
+index c3a0f591..d9bc5e15 100644
 --- a/modules/bar/BarContent.qml
 +++ b/modules/bar/BarContent.qml
-@@ -530,2 +530,16 @@ Item {
+@@ -528,6 +528,20 @@ Item {
+                             endRadius: root.innerRadius
+                         }
  
 +                        Loader {
 +                            active: Config.bar.showAudioDeviceSwitcher ?? true
@@ -524,7 +530,11 @@ index b9e57ca7..7a1055ce 100644
 +                        }
 +
                          Bar.BatteryIndicator {
-@@ -737,2 +751,17 @@ Item {
+                             id: batteryIndicator
+                             bar: root
+@@ -735,6 +749,21 @@ Item {
+                             endRadius: root.innerRadius
+                         }
  
 +                        Loader {
 +                            active: Config.bar.showAudioDeviceSwitcher ?? true
@@ -542,27 +552,31 @@ index b9e57ca7..7a1055ce 100644
 +                        }
 +
                          Bar.BatteryIndicator {
+                             id: batteryIndicatorVert
+                             bar: root
 diff --git a/modules/widgets/dashboard/controls/SettingsIndex.qml b/modules/widgets/dashboard/controls/SettingsIndex.qml
-index 6a606409..f41af7ac 100644
+index 4e6a1574..782ad09d 100644
 --- a/modules/widgets/dashboard/controls/SettingsIndex.qml
 +++ b/modules/widgets/dashboard/controls/SettingsIndex.qml
-@@ -158,2 +158,4 @@ QtObject {
-         { label: "Firefox Player", keywords: "browser media music", section: 8, subSection: "bar", subLabel: "Ambxst > Bar", icon: Icons.layout, isIcon: true },
-+        { label: "Audio Device Switcher", keywords: "sound output input headphones speakers sink source pipewire", section: 8, subSection: "bar", subLabel: "Ambxst > Bar", icon: Icons.speaker, isIcon: true },
-+        { label: "Excluded Audio Sinks", keywords: "filter hide remove device pipewire", section: 8, subSection: "bar", subLabel: "Ambxst > Bar", icon: Icons.speaker, isIcon: true },
-         { label: "Bar Auto-hide", keywords: "autohide hide show reveal", section: 8, subSection: "bar", subLabel: "Ambxst > Bar", icon: Icons.layout, isIcon: true },
+@@ -158,6 +158,8 @@ QtObject {
+         { label: I18n.t("settings.shell.launcher_icon_size"), keywords: "width height pixels", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
+         { label: I18n.t("settings.shell.pill_style"), keywords: "squished roundness radius bar", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
+         { label: I18n.t("settings.shell.firefox_player"), keywords: "browser media music", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
++        { label: I18n.t("shell.show_audio_switcher"), keywords: "sound output input headphones speakers sink source pipewire", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.speaker, isIcon: true },
++        { label: I18n.t("shell.hidden_audio_devices"), keywords: "filter hide remove device pipewire", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.speaker, isIcon: true },
+         { label: I18n.t("settings.shell.bar_autohide"), keywords: "autohide hide show reveal", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
+         { label: I18n.t("settings.shell.pinned_on_startup"), keywords: "show visible default", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
+         { label: I18n.t("settings.shell.hover_to_reveal"), keywords: "mouse show hide edge", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
 diff --git a/modules/widgets/dashboard/controls/ShellPanel.qml b/modules/widgets/dashboard/controls/ShellPanel.qml
-index d02bf8cf..c27b14a7 100644
+index b9586b66..26af2786 100644
 --- a/modules/widgets/dashboard/controls/ShellPanel.qml
 +++ b/modules/widgets/dashboard/controls/ShellPanel.qml
-@@ -9,2 +9,3 @@ import qs.modules.components
- import qs.modules.globals
-+import qs.modules.services
- import qs.config
-@@ -813,2 +814,104 @@ Item {
+@@ -812,6 +812,108 @@ Item {
+                             }
+                         }
  
 +                        ToggleRow {
-+                            label: "Show Audio Device Switcher"
++                            label: I18n.t("shell.show_audio_switcher")
 +                            checked: Config.bar.showAudioDeviceSwitcher ?? true
 +                            onToggled: value => {
 +                                if (value !== Config.bar.showAudioDeviceSwitcher) {
@@ -578,7 +592,7 @@ index d02bf8cf..c27b14a7 100644
 +                            spacing: 4
 +
 +                            Text {
-+                                text: "Hidden Audio Devices"
++                                text: I18n.t("shell.hidden_audio_devices")
 +                                font.family: Config.theme.font
 +                                font.pixelSize: Styling.fontSize(-1)
 +                                font.weight: Font.Medium
@@ -586,7 +600,7 @@ index d02bf8cf..c27b14a7 100644
 +                            }
 +
 +                            Text {
-+                                text: "Click to hide from the switcher popup"
++                                text: I18n.t("shell.hidden_audio_devices_hint")
 +                                font.family: Config.theme.font
 +                                font.pixelSize: Styling.fontSize(-2)
 +                                color: Colors.outline
@@ -664,3 +678,5 @@ index d02bf8cf..c27b14a7 100644
 +                        }
 +
                          Separator {
+                             Layout.fillWidth: true
+                         }
