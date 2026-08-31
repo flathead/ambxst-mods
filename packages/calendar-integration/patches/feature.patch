@@ -587,10 +587,10 @@ index c3a0f591..acab4437 100644
                              bar: root
 diff --git a/modules/services/CalendarService.qml b/modules/services/CalendarService.qml
 new file mode 100644
-index 00000000..3a3d5b6d
+index 00000000..33c11d6f
 --- /dev/null
 +++ b/modules/services/CalendarService.qml
-@@ -0,0 +1,323 @@
+@@ -0,0 +1,325 @@
 +pragma Singleton
 +import QtQuick
 +import Quickshell
@@ -870,13 +870,18 @@ index 00000000..3a3d5b6d
 +        }
 +    }
 +
++    // Wait for this module's own config, not for every Ambxst module. A
++    // missing or late config file elsewhere in the shell must not leave the
++    // calendar backend permanently stopped.
++    readonly property bool configReady: Config.calendarReady
++
 +    Component.onCompleted: {
-+        if (root.enabled && Config.initialLoadComplete)
++        if (root.enabled && root.configReady)
 +            calendarProcess.running = true;
 +    }
 +
 +    onEnabledChanged: {
-+        if (enabled && Config.initialLoadComplete) calendarProcess.running = true;
++        if (enabled && root.configReady) calendarProcess.running = true;
 +        else calendarProcess.running = false;
 +    }
 +
@@ -885,12 +890,9 @@ index 00000000..3a3d5b6d
 +    onArrivalSoundPathChanged: if (calendarProcess.running) restartProcess()
 +    onBlinkOnArrivalChanged:   if (calendarProcess.running) restartProcess()
 +
-+    Connections {
-+        target: Config
-+        function onInitialLoadCompleteChanged() {
-+            if (Config.initialLoadComplete && root.enabled)
-+                calendarProcess.running = true;
-+        }
++    onConfigReadyChanged: {
++        if (root.configReady && root.enabled)
++            calendarProcess.running = true;
 +    }
 +
 +    function restartProcess() {
