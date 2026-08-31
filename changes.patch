@@ -1,0 +1,129 @@
+diff --git a/cli.sh b/cli.sh
+index 3e09a3c1..82860c0b 100755
+--- a/cli.sh
++++ b/cli.sh
+@@ -485,8 +485,9 @@ help | --help | -h)
+ 		echo "DEBUG: gsettings not found in PATH" >&2
+ 	fi
+ 
+-	# Force Qt6CT
+-	export QT_QPA_PLATFORMTHEME=qt6ct
++	# Use KDE platform theme (reads icon theme from ~/.config/kdeglobals)
++	# qt6ct was removed — KDEPlasmaPlatformTheme6 is the installed plugin
++	export QT_QPA_PLATFORMTHEME=kde
+ 
+ 	# Cache this script's PID before exec (for fast PID lookups in future CLI calls)
+ 	echo $$ >/tmp/ambxst.pid
+diff --git a/modules/bar/BarContent.qml b/modules/bar/BarContent.qml
+index b9e57ca7..6a0f2515 100644
+--- a/modules/bar/BarContent.qml
++++ b/modules/bar/BarContent.qml
+@@ -528,6 +528,22 @@ Item {
+                             endRadius: root.innerRadius
+                         }
+ 
++                        AudioDeviceSwitcher {
++                            id: audioDeviceSwitcher
++                            bar: root
++                            layerEnabled: root.shadowsEnabled
++                            startRadius: root.innerRadius
++                            endRadius: root.innerRadius
++                        }
++
++                        Bar.KeyboardLayoutIndicator {
++                            id: keyboardIndicator
++                            bar: root
++                            layerEnabled: root.shadowsEnabled
++                            startRadius: root.innerRadius
++                            endRadius: root.innerRadius
++                        }
++
+                         Bar.BatteryIndicator {
+                             id: batteryIndicator
+                             bar: root
+@@ -735,6 +751,22 @@ Item {
+                             endRadius: root.innerRadius
+                         }
+ 
++                        AudioDeviceSwitcher {
++                            id: audioDeviceSwitcherVert
++                            bar: root
++                            layerEnabled: root.shadowsEnabled
++                            startRadius: root.innerRadius
++                            endRadius: root.innerRadius
++                        }
++
++                        Bar.KeyboardLayoutIndicator {
++                            id: keyboardIndicatorVert
++                            bar: root
++                            layerEnabled: root.shadowsEnabled
++                            startRadius: root.innerRadius
++                            endRadius: root.innerRadius
++                        }
++
+                         Bar.BatteryIndicator {
+                             id: batteryIndicatorVert
+                             bar: root
+diff --git a/modules/services/Audio.qml b/modules/services/Audio.qml
+index 05571624..ab539cf2 100644
+--- a/modules/services/Audio.qml
++++ b/modules/services/Audio.qml
+@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
+ 
+ import QtQuick
+ import Quickshell
++import Quickshell.Io
+ import Quickshell.Services.Pipewire
+ import qs.modules.services
+ import qs.modules.theme
+@@ -198,12 +199,24 @@ Singleton {
+         }
+     }
+ 
++    property Process wpctlProc: Process {
++        running: false
++    }
++
+     function setDefaultSink(node) {
+         Pipewire.preferredDefaultAudioSink = node;
++        if (node?.id !== undefined) {
++            wpctlProc.command = ["wpctl", "set-default", String(node.id)];
++            wpctlProc.running = true;
++        }
+     }
+ 
+     function setDefaultSource(node) {
+         Pipewire.preferredDefaultAudioSource = node;
++        if (node?.id !== undefined) {
++            wpctlProc.command = ["wpctl", "set-default", String(node.id)];
++            wpctlProc.running = true;
++        }
+     }
+ 
+     // Icon helper
+diff --git a/modules/widgets/defaultview/CompactPlayer.qml b/modules/widgets/defaultview/CompactPlayer.qml
+index 265b87e8..3a9a8e24 100644
+--- a/modules/widgets/defaultview/CompactPlayer.qml
++++ b/modules/widgets/defaultview/CompactPlayer.qml
+@@ -124,6 +124,21 @@ Item {
+         }
+     }
+ 
++    MouseArea {
++        anchors.fill: parent
++        acceptedButtons: Qt.NoButton
++        onWheel: wheel => {
++            if (!compactPlayer.player) {
++                wheel.accepted = false;
++                return;
++            }
++            if (wheel.angleDelta.y > 0)
++                Audio.incrementVolume();
++            else if (wheel.angleDelta.y < 0)
++                Audio.decrementVolume();
++        }
++    }
++
+     StyledRect {
+         variant: "common"
+         anchors.fill: parent

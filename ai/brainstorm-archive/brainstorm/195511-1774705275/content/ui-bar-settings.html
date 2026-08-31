@@ -1,0 +1,168 @@
+<h2>UI: Индикатор в баре и настройки</h2>
+<p class="subtitle">Виджет ближайших событий + панель подключения календарей</p>
+
+<div class="section">
+  <h3>Индикатор в баре (горизонтальный)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Bar → BarCalendarIndicator (рядом с часами)</div>
+    <div class="mockup-body" style="padding: 20px;">
+      <!-- Bar simulation -->
+      <div style="background: #282a36; border-radius: 10px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #44475a;">
+        <span style="font-size: 13px; color: #bd93f9;">📅</span>
+        <div>
+          <div style="font-size: 11px; font-weight: 500; color: #f8f8f2;">Standup</div>
+          <div style="font-size: 10px; color: #6272a4;">in 25 min</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; color: #6272a4; font-size: 12px;">
+        Показывает ближайшее событие. При клике — попап со списком событий на сегодня.
+      </div>
+
+      <!-- Popup preview -->
+      <div style="background: #282a36; border-radius: 8px; width: 280px; margin-top: 12px; border: 1px solid #44475a; overflow: hidden;">
+        <div style="padding: 10px 14px; border-bottom: 1px solid #44475a;">
+          <div style="font-size: 13px; font-weight: 600; color: #f8f8f2;">Today, March 28</div>
+        </div>
+        <div style="padding: 8px;">
+          <div style="display: flex; gap: 10px; padding: 8px; border-radius: 6px; background: #44475a33; margin-bottom: 4px;">
+            <div style="width: 3px; border-radius: 2px; background: #ff79c6; flex-shrink: 0;"></div>
+            <div>
+              <div style="font-size: 12px; font-weight: 500; color: #f8f8f2;">Team standup</div>
+              <div style="font-size: 10px; color: #50fa7b;">09:00 – 09:30 · in 25 min</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; padding: 8px; border-radius: 6px; background: #44475a33; margin-bottom: 4px;">
+            <div style="width: 3px; border-radius: 2px; background: #50fa7b; flex-shrink: 0;"></div>
+            <div>
+              <div style="font-size: 12px; font-weight: 500; color: #f8f8f2;">Dentist</div>
+              <div style="font-size: 10px; color: #6272a4;">14:00 – 15:00</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; padding: 8px; border-radius: 6px; background: #44475a33;">
+            <div style="width: 3px; border-radius: 2px; background: #8be9fd; flex-shrink: 0;"></div>
+            <div>
+              <div style="font-size: 12px; font-weight: 500; color: #f8f8f2;">Yoga class</div>
+              <div style="font-size: 10px; color: #6272a4;">18:00 – 19:00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Панель настроек календаря</h3>
+  <div class="mockup">
+    <div class="mockup-header">Dashboard → Settings → Calendar</div>
+    <div class="mockup-body" style="padding: 0;">
+      <div style="background: #282a36; border-radius: 8px; width: 360px; margin: 16px auto; border: 1px solid #44475a; overflow: hidden;">
+
+        <!-- Title -->
+        <div style="padding: 12px 16px; border-bottom: 1px solid #44475a; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: #6272a4; cursor: pointer;">←</span>
+            <span style="font-size: 15px; font-weight: 600; color: #f8f8f2;">Calendar</span>
+          </div>
+        </div>
+
+        <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 14px;">
+
+          <!-- Connected accounts -->
+          <div>
+            <div style="font-size: 11px; color: #6272a4; text-transform: uppercase; margin-bottom: 8px;">Connected Accounts</div>
+
+            <!-- Google account -->
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #44475a33; border-radius: 6px; margin-bottom: 6px;">
+              <div style="width: 28px; height: 28px; border-radius: 6px; background: #4285f4; display: flex; align-items: center; justify-content: center; font-size: 14px; color: white; font-weight: 700;">G</div>
+              <div style="flex: 1;">
+                <div style="font-size: 13px; color: #f8f8f2;">user@gmail.com</div>
+                <div style="font-size: 10px; color: #50fa7b;">● Connected</div>
+              </div>
+              <button style="background: #ff5555; border: none; color: #f8f8f2; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer;">Remove</button>
+            </div>
+
+            <!-- CalDAV server -->
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #44475a33; border-radius: 6px; margin-bottom: 8px;">
+              <div style="width: 28px; height: 28px; border-radius: 6px; background: #0082c9; display: flex; align-items: center; justify-content: center; font-size: 14px; color: white; font-weight: 700;">N</div>
+              <div style="flex: 1;">
+                <div style="font-size: 13px; color: #f8f8f2;">Nextcloud</div>
+                <div style="font-size: 10px; color: #50fa7b;">● Connected</div>
+              </div>
+              <button style="background: #ff5555; border: none; color: #f8f8f2; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer;">Remove</button>
+            </div>
+
+            <!-- Add button -->
+            <div style="display: flex; gap: 6px;">
+              <button style="flex: 1; background: #44475a; border: 1px solid #6272a4; color: #f8f8f2; border-radius: 6px; padding: 8px; font-size: 12px; cursor: pointer;">+ Google</button>
+              <button style="flex: 1; background: #44475a; border: 1px solid #6272a4; color: #f8f8f2; border-radius: 6px; padding: 8px; font-size: 12px; cursor: pointer;">+ CalDAV</button>
+            </div>
+          </div>
+
+          <!-- Calendars -->
+          <div>
+            <div style="font-size: 11px; color: #6272a4; text-transform: uppercase; margin-bottom: 8px;">Calendars</div>
+
+            <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0;">
+              <div style="width: 12px; height: 12px; border-radius: 3px; background: #ff79c6;"></div>
+              <span style="font-size: 13px; color: #f8f8f2; flex: 1;">Work</span>
+              <span style="font-size: 10px; color: #6272a4;">Google</span>
+              <div style="width: 32px; height: 18px; border-radius: 9px; background: #50fa7b; position: relative; cursor: pointer;">
+                <div style="width: 14px; height: 14px; border-radius: 50%; background: white; position: absolute; right: 2px; top: 2px;"></div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0;">
+              <div style="width: 12px; height: 12px; border-radius: 3px; background: #50fa7b;"></div>
+              <span style="font-size: 13px; color: #f8f8f2; flex: 1;">Personal</span>
+              <span style="font-size: 10px; color: #6272a4;">Nextcloud</span>
+              <div style="width: 32px; height: 18px; border-radius: 9px; background: #50fa7b; position: relative; cursor: pointer;">
+                <div style="width: 14px; height: 14px; border-radius: 50%; background: white; position: absolute; right: 2px; top: 2px;"></div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0;">
+              <div style="width: 12px; height: 12px; border-radius: 3px; background: #8be9fd;"></div>
+              <span style="font-size: 13px; color: #f8f8f2; flex: 1;">Holidays</span>
+              <span style="font-size: 10px; color: #6272a4;">Google</span>
+              <div style="width: 32px; height: 18px; border-radius: 9px; background: #6272a4; position: relative; cursor: pointer;">
+                <div style="width: 14px; height: 14px; border-radius: 50%; background: white; position: absolute; left: 2px; top: 2px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Settings -->
+          <div>
+            <div style="font-size: 11px; color: #6272a4; text-transform: uppercase; margin-bottom: 8px;">Settings</div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0;">
+              <span style="font-size: 13px; color: #f8f8f2;">Sync interval</span>
+              <div style="background: #44475a; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #f8f8f2;">15 min ▼</div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0;">
+              <span style="font-size: 13px; color: #f8f8f2;">Notifications</span>
+              <div style="width: 32px; height: 18px; border-radius: 9px; background: #50fa7b; position: relative; cursor: pointer;">
+                <div style="width: 14px; height: 14px; border-radius: 50%; background: white; position: absolute; right: 2px; top: 2px;"></div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0;">
+              <span style="font-size: 13px; color: #f8f8f2;">Bar indicator</span>
+              <div style="width: 32px; height: 18px; border-radius: 9px; background: #50fa7b; position: relative; cursor: pointer;">
+                <div style="width: 14px; height: 14px; border-radius: 50%; background: white; position: absolute; right: 2px; top: 2px;"></div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0;">
+              <span style="font-size: 13px; color: #f8f8f2;">Default reminder</span>
+              <div style="background: #44475a; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #f8f8f2;">15 min ▼</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

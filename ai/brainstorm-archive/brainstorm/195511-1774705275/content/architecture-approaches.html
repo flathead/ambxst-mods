@@ -1,0 +1,70 @@
+<h2>Архитектура календарной интеграции</h2>
+<p class="subtitle">Два подхода к взаимодействию QML ↔ Calendar API</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Единый Python-процесс (рекомендую)</h3>
+      <p>Один долгоживущий Python-скрипт — по аналогии с <code>system_monitor.py</code></p>
+
+      <div style="background: #1a1a2e; border-radius: 8px; padding: 16px; margin: 12px 0; font-family: monospace; font-size: 13px; line-height: 1.6;">
+        <div style="color: #8be9fd;">┌─────────────────────────────────┐</div>
+        <div style="color: #8be9fd;">│  <span style="color: #f8f8f2;">QML (CalendarService.qml)</span>       │</div>
+        <div style="color: #8be9fd;">│  <span style="color: #6272a4;">Singleton, как SystemResources</span>  │</div>
+        <div style="color: #8be9fd;">└──────────┬──────────────────────┘</div>
+        <div style="color: #6272a4;">           │ stdin: команды (JSON)</div>
+        <div style="color: #6272a4;">           │ stdout: данные (JSON lines)</div>
+        <div style="color: #8be9fd;">┌──────────▼──────────────────────┐</div>
+        <div style="color: #8be9fd;">│  <span style="color: #f8f8f2;">Python (calendar_service.py)</span>    │</div>
+        <div style="color: #8be9fd;">│  <span style="color: #6272a4;">OAuth, CalDAV, кэш, notify</span>     │</div>
+        <div style="color: #8be9fd;">└──────────┬──────────────────────┘</div>
+        <div style="color: #6272a4;">           │ HTTP/CalDAV</div>
+        <div style="color: #8be9fd;">┌──────────▼──────────────────────┐</div>
+        <div style="color: #8be9fd;">│  <span style="color: #50fa7b;">Google Calendar API</span>  /  <span style="color: #ffb86c;">CalDAV</span> │</div>
+        <div style="color: #8be9fd;">└─────────────────────────────────┘</div>
+      </div>
+
+      <div style="margin-top: 8px;">
+        <span style="color: #50fa7b;">+</span> Знакомый паттерн (system_monitor.py)<br>
+        <span style="color: #50fa7b;">+</span> Богатые Python-библиотеки (google-api-python-client, caldav, icalendar)<br>
+        <span style="color: #50fa7b;">+</span> Один процесс = проще управлять<br>
+        <span style="color: #50fa7b;">+</span> stdin/stdout для двусторонней связи (команды от QML → ответы от Python)<br>
+        <span style="color: #ff5555;">−</span> Один скрипт отвечает за всё (OAuth + sync + cache + notify)
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Разделённая архитектура: Sync + Cache</h3>
+      <p>Python-скрипт для синхронизации, FileView для кэша</p>
+
+      <div style="background: #1a1a2e; border-radius: 8px; padding: 16px; margin: 12px 0; font-family: monospace; font-size: 13px; line-height: 1.6;">
+        <div style="color: #8be9fd;">┌─────────────────────────────────┐</div>
+        <div style="color: #8be9fd;">│  <span style="color: #f8f8f2;">QML (CalendarService.qml)</span>       │</div>
+        <div style="color: #8be9fd;">│  <span style="color: #6272a4;">Читает кэш через FileView</span>     │</div>
+        <div style="color: #8be9fd;">└────┬─────────────────┬──────────┘</div>
+        <div style="color: #6272a4;">     │ FileView         │ Process (команды)</div>
+        <div style="color: #8be9fd;">┌────▼────┐    ┌───────▼──────────────┐</div>
+        <div style="color: #8be9fd;">│ <span style="color: #ffb86c;">JSON</span>    │    │ <span style="color: #f8f8f2;">Python (calendar_sync)</span> │</div>
+        <div style="color: #8be9fd;">│ <span style="color: #ffb86c;">cache</span>   │◄───│ <span style="color: #6272a4;">OAuth, CalDAV, CRUD</span>   │</div>
+        <div style="color: #8be9fd;">└─────────┘    └───────┬──────────────┘</div>
+        <div style="color: #6272a4;">                       │ HTTP/CalDAV</div>
+        <div style="color: #8be9fd;">               ┌───────▼──────────────┐</div>
+        <div style="color: #8be9fd;">               │ <span style="color: #50fa7b;">Google</span>  /  <span style="color: #ffb86c;">CalDAV</span>     │</div>
+        <div style="color: #8be9fd;">               └──────────────────────┘</div>
+      </div>
+
+      <div style="margin-top: 8px;">
+        <span style="color: #50fa7b;">+</span> Разделение ответственности: sync отдельно, кэш отдельно<br>
+        <span style="color: #50fa7b;">+</span> FileView автоматически реагирует на изменения файла<br>
+        <span style="color: #50fa7b;">+</span> Процесс запускается только для команд, не живёт постоянно<br>
+        <span style="color: #ff5555;">−</span> Два механизма связи (FileView + Process) сложнее<br>
+        <span style="color: #ff5555;">−</span> Гонки при одновременном чтении/записи кэша<br>
+        <span style="color: #ff5555;">−</span> Уведомления требуют отдельного таймера/процесса
+      </div>
+    </div>
+  </div>
+</div>

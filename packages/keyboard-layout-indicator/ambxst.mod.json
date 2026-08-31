@@ -20,7 +20,7 @@
     "community.i18n"
   ],
   "dependencySources": {
-    "community.i18n": "https://github.com/flathead/ambxst-mods/tree/main/packages/i18n"
+    "community.i18n": "https://github.com/flathead/ambxst-mod-i18n.git"
   },
   "commands": [
     "hyprctl"

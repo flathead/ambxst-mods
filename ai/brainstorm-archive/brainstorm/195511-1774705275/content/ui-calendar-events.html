@@ -1,0 +1,210 @@
+<h2>UI: Индикаторы событий и попап дня</h2>
+<p class="subtitle">Как события отображаются на календаре и в попапе</p>
+
+<div class="section">
+  <h3>Календарная сетка с индикаторами</h3>
+  <div class="mockup">
+    <div class="mockup-header">Dashboard → Widgets → Calendar</div>
+    <div class="mockup-body" style="padding: 20px;">
+      <!-- Calendar header -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px; font-weight: 600; color: #f8f8f2;">March 2026</span>
+          <button style="background: #44475a; border: none; color: #bd93f9; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px;">⚙</button>
+        </div>
+        <div style="display: flex; gap: 4px;">
+          <button style="background: #44475a; border: none; color: #f8f8f2; border-radius: 4px; padding: 4px 10px; cursor: pointer;">◀</button>
+          <button style="background: #44475a; border: none; color: #f8f8f2; border-radius: 4px; padding: 4px 10px; cursor: pointer;">▶</button>
+        </div>
+      </div>
+
+      <!-- Weekday headers -->
+      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; margin-bottom: 4px;">
+        <div style="color: #6272a4; font-size: 11px; padding: 4px;">Mon</div>
+        <div style="color: #6272a4; font-size: 11px; padding: 4px;">Tue</div>
+        <div style="color: #6272a4; font-size: 11px; padding: 4px;">Wed</div>
+        <div style="color: #6272a4; font-size: 11px; padding: 4px;">Thu</div>
+        <div style="color: #6272a4; font-size: 11px; padding: 4px;">Fri</div>
+        <div style="color: #6272a4; font-size: 11px; padding: 4px;">Sat</div>
+        <div style="color: #6272a4; font-size: 11px; padding: 4px;">Sun</div>
+      </div>
+
+      <!-- Calendar grid -->
+      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center;">
+        <!-- Row 1: Feb overflow -->
+        <div style="color: #44475a; padding: 8px 4px; font-size: 13px; position: relative;">23</div>
+        <div style="color: #44475a; padding: 8px 4px; font-size: 13px; position: relative;">24</div>
+        <div style="color: #44475a; padding: 8px 4px; font-size: 13px; position: relative;">25</div>
+        <div style="color: #44475a; padding: 8px 4px; font-size: 13px; position: relative;">26</div>
+        <div style="color: #44475a; padding: 8px 4px; font-size: 13px; position: relative;">27</div>
+        <div style="color: #44475a; padding: 8px 4px; font-size: 13px; position: relative;">28</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">1</div>
+
+        <!-- Row 2 -->
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">2</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">3
+          <div style="position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #ff79c6;"></div>
+        </div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">4</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">5
+          <div style="position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); display: flex; gap: 2px;">
+            <div style="width: 4px; height: 4px; border-radius: 50%; background: #ff79c6;"></div>
+            <div style="width: 4px; height: 4px; border-radius: 50%; background: #50fa7b;"></div>
+          </div>
+        </div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">6</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">7</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">8</div>
+
+        <!-- Row 3 -->
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">9</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">10
+          <div style="position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #8be9fd;"></div>
+        </div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">11</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">12</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">13</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">14</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">15</div>
+
+        <!-- Row 4 -->
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">16</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">17</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">18</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">19</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">20</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">21</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">22</div>
+
+        <!-- Row 5 -->
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">23</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">24</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">25
+          <div style="position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #ffb86c;"></div>
+        </div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">26</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">27</div>
+        <div style="background: #bd93f9; border-radius: 6px; color: #282a36; padding: 8px 4px; font-size: 13px; font-weight: 700; position: relative;">28
+          <div style="position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #282a36;"></div>
+        </div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">29</div>
+
+        <!-- Row 6 -->
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">30</div>
+        <div style="color: #f8f8f2; padding: 8px 4px; font-size: 13px; position: relative;">31</div>
+        <div style="color: #44475a; padding: 8px 4px; font-size: 13px;">1</div>
+        <div style="color: #44475a; padding: 8px 4px; font-size: 13px;">2</div>
+        <div style="color: #44475a; padding: 8px 4px; font-size: 13px;">3</div>
+        <div style="color: #44475a; padding: 8px 4px; font-size: 13px;">4</div>
+        <div style="color: #44475a; padding: 8px 4px; font-size: 13px;">5</div>
+      </div>
+
+      <!-- Legend -->
+      <div style="margin-top: 12px; display: flex; gap: 12px; font-size: 11px; color: #6272a4;">
+        <span>● точка = есть события</span>
+        <span>● несколько точек = несколько календарей</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Попап событий дня (клик по 5 марта)</h3>
+  <div class="mockup">
+    <div class="mockup-header">EventPopup — список событий + быстрое создание</div>
+    <div class="mockup-body" style="padding: 0;">
+      <div style="background: #282a36; border-radius: 8px; width: 320px; margin: 16px auto; border: 1px solid #44475a; overflow: hidden;">
+        <!-- Header -->
+        <div style="padding: 12px 16px; border-bottom: 1px solid #44475a; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 15px; font-weight: 600; color: #f8f8f2;">5 March 2026</div>
+            <div style="font-size: 11px; color: #6272a4;">Thursday · 2 events</div>
+          </div>
+          <button style="background: #50fa7b; border: none; color: #282a36; border-radius: 6px; padding: 4px 12px; font-size: 13px; font-weight: 600; cursor: pointer;">+ Add</button>
+        </div>
+
+        <!-- Event list -->
+        <div style="padding: 8px;">
+          <!-- Event 1 -->
+          <div style="display: flex; gap: 10px; padding: 10px; border-radius: 6px; background: #44475a33; margin-bottom: 4px; cursor: pointer;">
+            <div style="width: 3px; border-radius: 2px; background: #ff79c6; flex-shrink: 0;"></div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 13px; font-weight: 500; color: #f8f8f2;">Team standup</div>
+              <div style="font-size: 11px; color: #6272a4;">09:00 – 09:30 · Google</div>
+            </div>
+          </div>
+
+          <!-- Event 2 -->
+          <div style="display: flex; gap: 10px; padding: 10px; border-radius: 6px; background: #44475a33; cursor: pointer;">
+            <div style="width: 3px; border-radius: 2px; background: #50fa7b; flex-shrink: 0;"></div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 13px; font-weight: 500; color: #f8f8f2;">Dentist appointment</div>
+              <div style="font-size: 11px; color: #6272a4;">14:00 – 15:00 · Nextcloud</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Форма создания/редактирования (в том же попапе)</h3>
+  <div class="mockup">
+    <div class="mockup-header">EventPopup → режим редактирования</div>
+    <div class="mockup-body" style="padding: 0;">
+      <div style="background: #282a36; border-radius: 8px; width: 320px; margin: 16px auto; border: 1px solid #44475a; overflow: hidden;">
+        <!-- Header -->
+        <div style="padding: 12px 16px; border-bottom: 1px solid #44475a; display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 15px; font-weight: 600; color: #f8f8f2;">New Event</div>
+          <button style="background: transparent; border: none; color: #6272a4; cursor: pointer; font-size: 16px;">✕</button>
+        </div>
+
+        <!-- Form -->
+        <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 10px;">
+          <div>
+            <div style="font-size: 11px; color: #6272a4; margin-bottom: 4px;">Title</div>
+            <input style="width: 100%; background: #44475a; border: 1px solid #6272a4; border-radius: 6px; padding: 8px 10px; color: #f8f8f2; font-size: 13px; box-sizing: border-box;" value="Team standup" />
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <div style="flex: 1;">
+              <div style="font-size: 11px; color: #6272a4; margin-bottom: 4px;">Start</div>
+              <input style="width: 100%; background: #44475a; border: 1px solid #6272a4; border-radius: 6px; padding: 8px 10px; color: #f8f8f2; font-size: 13px; box-sizing: border-box;" value="09:00" />
+            </div>
+            <div style="flex: 1;">
+              <div style="font-size: 11px; color: #6272a4; margin-bottom: 4px;">End</div>
+              <input style="width: 100%; background: #44475a; border: 1px solid #6272a4; border-radius: 6px; padding: 8px 10px; color: #f8f8f2; font-size: 13px; box-sizing: border-box;" value="09:30" />
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 11px; color: #6272a4; margin-bottom: 4px;">Calendar</div>
+            <div style="background: #44475a; border: 1px solid #6272a4; border-radius: 6px; padding: 8px 10px; color: #f8f8f2; font-size: 13px; display: flex; justify-content: space-between; align-items: center;">
+              <span>Work (Google)</span>
+              <span style="color: #6272a4;">▼</span>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 11px; color: #6272a4; margin-bottom: 4px;">Reminder</div>
+            <div style="background: #44475a; border: 1px solid #6272a4; border-radius: 6px; padding: 8px 10px; color: #f8f8f2; font-size: 13px; display: flex; justify-content: space-between; align-items: center;">
+              <span>15 min before</span>
+              <span style="color: #6272a4;">▼</span>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 11px; color: #6272a4; margin-bottom: 4px;">Description</div>
+            <textarea style="width: 100%; background: #44475a; border: 1px solid #6272a4; border-radius: 6px; padding: 8px 10px; color: #f8f8f2; font-size: 13px; resize: vertical; min-height: 48px; box-sizing: border-box;" placeholder="Optional..."></textarea>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <button style="flex: 1; background: #bd93f9; border: none; color: #282a36; border-radius: 6px; padding: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Save</button>
+            <button style="background: #ff5555; border: none; color: #f8f8f2; border-radius: 6px; padding: 8px 14px; font-size: 13px; cursor: pointer;">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -22,12 +22,10 @@ ambxst mods enable community.keyboard-layout-indicator
 ambxst reload
 ```
 
-Every package lives here. `community.i18n` used to have a repository of its own;
-that mirror is retired and its packages now point back at this directory.
-
 New packages are installed disabled. Review the manifest, permissions, and patch
-before enabling one. UI packages require `community.i18n`; the details pane marks
-it as missing, disabled, or ready. **Install required mods** downloads and enables
+before enabling one. UI packages require `community.i18n`, which lives in its own
+repository at [flathead/ambxst-mod-i18n](https://github.com/flathead/ambxst-mod-i18n);
+the details pane marks it as missing, disabled, or ready. **Install required mods** downloads and enables
 the dependency after confirmation. It does not enable the selected package.
 
 Use **Sort: Load order** to drag packages into the order in which their patches
@@ -50,8 +48,8 @@ by hand. Then inspect the resulting source and run the project checks:
 
 ```bash
 git switch -c feature/example origin/dev
-git apply --check --whitespace=error-all packages/i18n/patches/feature.patch
-git apply packages/i18n/patches/feature.patch
+git apply --check --whitespace=error-all ../ambxst-mod-i18n/patches/feature.patch
+git apply ../ambxst-mod-i18n/patches/feature.patch
 git apply --check --whitespace=error-all packages/example/patches/feature.patch
 git apply packages/example/patches/feature.patch
 go test ./...
