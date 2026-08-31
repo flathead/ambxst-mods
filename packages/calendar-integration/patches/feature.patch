@@ -2213,7 +2213,7 @@ index 00000000..0e396997
 +    }
 +}
 diff --git a/modules/widgets/dashboard/controls/SettingsIndex.qml b/modules/widgets/dashboard/controls/SettingsIndex.qml
-index 8b5315bc..202d3b75 100644
+index 8b5315bc..58714781 100644
 --- a/modules/widgets/dashboard/controls/SettingsIndex.qml
 +++ b/modules/widgets/dashboard/controls/SettingsIndex.qml
 @@ -214,7 +214,13 @@ QtObject {
@@ -2224,35 +2224,41 @@ index 8b5315bc..202d3b75 100644
 +        { label: I18n.t("settings.shell.system_entry"), keywords: "config settings ambxst", section: 8, subSection: "system", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.system"), icon: Icons.circuitry, isIcon: true },
 +
 +        // --- Calendar ---
-+        { label: I18n.t("calendar.panel.title"), keywords: "events google caldav schedule sync reminder notifications", section: 9, subSection: "", subLabel: "", icon: Icons.calendarBlank, isIcon: true },
-+        { label: I18n.t("calendar.panel.section_accounts"), keywords: "google caldav nextcloud connect login oauth", section: 9, subSection: "accounts", subLabel: I18n.t("calendar.panel.title") + " > " + I18n.t("calendar.panel.section_accounts"), icon: Icons.calendarBlank, isIcon: true },
-+        { label: I18n.t("calendar.panel.sync_interval"), keywords: "interval refresh update", section: 9, subSection: "settings", subLabel: I18n.t("calendar.panel.title") + " > " + I18n.t("calendar.panel.section_settings"), icon: Icons.sync, isIcon: true },
-+        { label: I18n.t("calendar.panel.notifications"), keywords: "reminder alert notify", section: 9, subSection: "settings", subLabel: I18n.t("calendar.panel.title") + " > " + I18n.t("calendar.panel.section_settings"), icon: Icons.bell, isIcon: true }
++        { label: I18n.t("calendar.panel.title"), keywords: "events google caldav schedule sync reminder notifications", section: 11, subSection: "", subLabel: "", icon: Icons.calendarBlank, isIcon: true },
++        { label: I18n.t("calendar.panel.section_accounts"), keywords: "google caldav nextcloud connect login oauth", section: 11, subSection: "accounts", subLabel: I18n.t("calendar.panel.title") + " > " + I18n.t("calendar.panel.section_accounts"), icon: Icons.calendarBlank, isIcon: true },
++        { label: I18n.t("calendar.panel.sync_interval"), keywords: "interval refresh update", section: 11, subSection: "settings", subLabel: I18n.t("calendar.panel.title") + " > " + I18n.t("calendar.panel.section_settings"), icon: Icons.sync, isIcon: true },
++        { label: I18n.t("calendar.panel.notifications"), keywords: "reminder alert notify", section: 11, subSection: "settings", subLabel: I18n.t("calendar.panel.title") + " > " + I18n.t("calendar.panel.section_settings"), icon: Icons.bell, isIcon: true }
      ]
  
      property var items: staticItems.concat(dynamicItems)
 diff --git a/modules/widgets/dashboard/controls/SettingsTab.qml b/modules/widgets/dashboard/controls/SettingsTab.qml
-index 91866bd2..cc2658d3 100644
+index 91866bd2..b76f6aae 100644
 --- a/modules/widgets/dashboard/controls/SettingsTab.qml
 +++ b/modules/widgets/dashboard/controls/SettingsTab.qml
-@@ -255,10 +255,16 @@ Rectangle {
-             section: 8,
+@@ -266,6 +266,12 @@ Rectangle {
+             label: "Mods",
+             section: 10,
              isIcon: true
-         },
++        },
 +        {
 +            icon: Icons.calendarBlank,
 +            label: I18n.t("settings.calendar"),
-+            section: 9,
++            section: 11,
 +            isIcon: true
-+        },
-         {
-             icon: Qt.resolvedUrl("../../../../assets/ambxst/ambxst-icon.svg"),
-             label: I18n.t("settings.ambxst"),
--            section: 9,
-+            section: 10,
-             isIcon: false
-         },
-         {
+         }
+     ]
+ 
+@@ -606,6 +612,10 @@ Rectangle {
+                 {
+                     component: "ModsPanel.qml",
+                     section: 10
++                },
++                {
++                    component: "CalendarPanel.qml",
++                    section: 11
+                 }
+             ]
+ 
 diff --git a/modules/widgets/dashboard/widgets/WidgetsTab.qml b/modules/widgets/dashboard/widgets/WidgetsTab.qml
 index 18082e7d..998d17a5 100644
 --- a/modules/widgets/dashboard/widgets/WidgetsTab.qml
