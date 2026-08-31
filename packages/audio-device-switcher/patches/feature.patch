@@ -555,10 +555,10 @@ index c3a0f591..d9bc5e15 100644
                              id: batteryIndicatorVert
                              bar: root
 diff --git a/modules/widgets/dashboard/controls/SettingsIndex.qml b/modules/widgets/dashboard/controls/SettingsIndex.qml
-index 4e6a1574..782ad09d 100644
+index 8b5315bc..b32e3f66 100644
 --- a/modules/widgets/dashboard/controls/SettingsIndex.qml
 +++ b/modules/widgets/dashboard/controls/SettingsIndex.qml
-@@ -158,6 +158,8 @@ QtObject {
+@@ -163,6 +163,8 @@ QtObject {
          { label: I18n.t("settings.shell.launcher_icon_size"), keywords: "width height pixels", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
          { label: I18n.t("settings.shell.pill_style"), keywords: "squished roundness radius bar", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
          { label: I18n.t("settings.shell.firefox_player"), keywords: "browser media music", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },

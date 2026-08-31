@@ -10,17 +10,29 @@
   "compatibility": {
     "api": 1,
     "ambxst": ">=1.2.5 <1.3.0",
-    "testedBaseCommits": ["8f00dbaa831824e24af3a1644d32ae465acc60ea"]
+    "testedBaseCommits": [
+      "4127fdfd23757638413e9755f46bf9f142a1bb49"
+    ]
   },
-  "dependencies": ["community.i18n"],
+  "dependencies": [
+    "community.i18n"
+  ],
   "dependencySources": {
     "community.i18n": "https://github.com/flathead/ambxst-mod-i18n.git"
   },
-  "commands": ["python3", "notify-send"],
+  "commands": [
+    "python3",
+    "notify-send"
+  ],
   "permissions": [
     "Connects to calendar providers configured by the user",
     "Stores OAuth or CalDAV credentials in the user's Ambxst data directory",
     "Sends desktop notifications for calendar reminders"
   ],
-  "operations": [{"type": "patch", "source": "patches/feature.patch"}]
+  "operations": [
+    {
+      "type": "patch",
+      "source": "patches/feature.patch"
+    }
+  ]
 }

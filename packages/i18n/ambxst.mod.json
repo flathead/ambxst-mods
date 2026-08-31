@@ -10,8 +10,17 @@
   "compatibility": {
     "api": 1,
     "ambxst": ">=1.2.5 <1.3.0",
-    "testedBaseCommits": ["8f00dbaa831824e24af3a1644d32ae465acc60ea"]
+    "testedBaseCommits": [
+      "4127fdfd23757638413e9755f46bf9f142a1bb49"
+    ]
   },
-  "permissions": ["Reads the system locale and local translation files"],
-  "operations": [{"type": "patch", "source": "patches/feature.patch"}]
+  "permissions": [
+    "Reads the system locale and local translation files"
+  ],
+  "operations": [
+    {
+      "type": "patch",
+      "source": "patches/feature.patch"
+    }
+  ]
 }

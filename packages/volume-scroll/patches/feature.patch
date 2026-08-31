@@ -2,7 +2,9 @@ diff --git a/modules/bar/ControlsButton.qml b/modules/bar/ControlsButton.qml
 index 687f077b..634c4708 100644
 --- a/modules/bar/ControlsButton.qml
 +++ b/modules/bar/ControlsButton.qml
-@@ -86,2 +86,8 @@ Item {
+@@ -84,6 +84,12 @@ Item {
+                     controlsPopup.toggle();
+                 }
              }
 +            onWheel: wheel => {
 +                if (wheel.angleDelta.y > 0)
@@ -11,11 +13,15 @@ index 687f077b..634c4708 100644
 +                    Audio.decrementVolume();
 +            }
          }
+     }
+ 
 diff --git a/modules/widgets/dashboard/widgets/FullPlayer.qml b/modules/widgets/dashboard/widgets/FullPlayer.qml
 index 08e36cd3..40d90054 100644
 --- a/modules/widgets/dashboard/widgets/FullPlayer.qml
 +++ b/modules/widgets/dashboard/widgets/FullPlayer.qml
-@@ -670,2 +670,12 @@ StyledRect {
+@@ -668,4 +668,14 @@ StyledRect {
+             return Icons.telegram;
+         return Icons.player;
      }
 +
 +    WheelHandler {
@@ -32,7 +38,9 @@ diff --git a/modules/widgets/defaultview/CompactPlayer.qml b/modules/widgets/def
 index 265b87e8..f3b97206 100644
 --- a/modules/widgets/defaultview/CompactPlayer.qml
 +++ b/modules/widgets/defaultview/CompactPlayer.qml
-@@ -126,2 +126,15 @@ Item {
+@@ -124,6 +124,19 @@ Item {
+         }
+     }
  
 +    // A pointer handler does not compete with child controls for stacking.
 +    WheelHandler {
@@ -48,7 +56,12 @@ index 265b87e8..f3b97206 100644
 +    }
 +
      StyledRect {
-@@ -669,2 +682,3 @@ Item {
+         variant: "common"
+         anchors.fill: parent
+@@ -667,5 +680,6 @@ Item {
+                 }
+             }
          }
 +
      }
+ }
