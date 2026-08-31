@@ -13,7 +13,7 @@
     "api": 1,
     "ambxst": ">=1.2.5 <1.3.0",
     "testedBaseCommits": [
-      "de25d8c82b1b701ba28d3a8a8b1a674c10f1aefa"
+      "287573bf9e5f3ed4ac40f5ead8b5879b595c5577"
     ]
   },
   "dependencies": [
