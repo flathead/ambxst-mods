@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Axenide/Ambxst/dev/docs/mods/manifest.schema.json",
+  "manifestVersion": 1,
+  "id": "community.i18n",
+  "name": "Runtime translations",
+  "version": "1.0.0",
+  "description": "Adds runtime language switching and English, Russian, and Spanish translations.",
+  "license": "AGPL-3.0-only",
+  "author": "flathead",
+  "compatibility": {
+    "api": 1,
+    "ambxst": ">=1.2.5 <1.3.0",
+    "testedBaseCommits": ["8f00dbaa831824e24af3a1644d32ae465acc60ea"]
+  },
+  "permissions": ["Reads the system locale and local translation files"],
+  "operations": [{"type": "patch", "source": "patches/feature.patch"}]
+}

@@ -1,0 +1,54 @@
+diff --git a/modules/bar/ControlsButton.qml b/modules/bar/ControlsButton.qml
+index 687f077b..634c4708 100644
+--- a/modules/bar/ControlsButton.qml
++++ b/modules/bar/ControlsButton.qml
+@@ -86,2 +86,8 @@ Item {
+             }
++            onWheel: wheel => {
++                if (wheel.angleDelta.y > 0)
++                    Audio.incrementVolume();
++                else if (wheel.angleDelta.y < 0)
++                    Audio.decrementVolume();
++            }
+         }
+diff --git a/modules/widgets/dashboard/widgets/FullPlayer.qml b/modules/widgets/dashboard/widgets/FullPlayer.qml
+index 08e36cd3..40d90054 100644
+--- a/modules/widgets/dashboard/widgets/FullPlayer.qml
++++ b/modules/widgets/dashboard/widgets/FullPlayer.qml
+@@ -670,2 +670,12 @@ StyledRect {
+     }
++
++    WheelHandler {
++        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
++        onWheel: event => {
++            if (event.angleDelta.y > 0)
++                Audio.incrementVolume();
++            else if (event.angleDelta.y < 0)
++                Audio.decrementVolume();
++        }
++    }
+ }
+diff --git a/modules/widgets/defaultview/CompactPlayer.qml b/modules/widgets/defaultview/CompactPlayer.qml
+index 265b87e8..f3b97206 100644
+--- a/modules/widgets/defaultview/CompactPlayer.qml
++++ b/modules/widgets/defaultview/CompactPlayer.qml
+@@ -126,2 +126,15 @@ Item {
+ 
++    // A pointer handler does not compete with child controls for stacking.
++    WheelHandler {
++        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
++        onWheel: event => {
++            if (!compactPlayer.player)
++                return;
++            if (event.angleDelta.y > 0)
++                Audio.incrementVolume();
++            else if (event.angleDelta.y < 0)
++                Audio.decrementVolume();
++        }
++    }
++
+     StyledRect {
+@@ -669,2 +682,3 @@ Item {
+         }
++
+     }

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Axenide/Ambxst/dev/docs/mods/manifest.schema.json",
+  "manifestVersion": 1,
+  "id": "community.keyboard-layout-indicator",
+  "name": "Keyboard layout indicator",
+  "version": "1.0.0",
+  "description": "Shows the active Hyprland keyboard layout in the bar and provides a layout picker.",
+  "license": "AGPL-3.0-only",
+  "author": "flathead",
+  "compatibility": {
+    "api": 1,
+    "ambxst": ">=1.2.5 <1.3.0",
+    "testedBaseCommits": ["8f00dbaa831824e24af3a1644d32ae465acc60ea"]
+  },
+  "commands": ["hyprctl"],
+  "permissions": ["Reads Hyprland keyboard devices and changes the active layout"],
+  "operations": [{"type": "patch", "source": "patches/feature.patch"}]
+}

@@ -1,0 +1,1708 @@
+diff --git a/config/Config.qml b/config/Config.qml
+index 41436c75..9845a052 100644
+--- a/config/Config.qml
++++ b/config/Config.qml
+@@ -1051,2 +1051,19 @@ Singleton {
+             }
++            property JsonObject resources: JsonObject {
++                property bool enabled: true
++                property string location: "dashboard"
++                property string barSide: "left"
++                property JsonObject show: JsonObject {
++                    property bool cpu: true
++                    property bool ram: true
++                    property bool gpu: true
++                    property bool disk: true
++                    property bool barCpu: true
++                    property bool barRam: true
++                    property bool barGpu: true
++                    property bool barDisk: true
++                    property bool dashTemp: true
++                    property bool barTemp: true
++                }
++            }
+         }
+diff --git a/config/defaults/system.js b/config/defaults/system.js
+index 07d6e187..580adbbd 100644
+--- a/config/defaults/system.js
++++ b/config/defaults/system.js
+@@ -46,2 +46,19 @@ var data = {
+         "syncSpotify": false
++    },
++    "resources": {
++        "enabled": true,
++        "location": "dashboard",
++        "barSide": "left",
++        "show": {
++            "cpu": true,
++            "ram": true,
++            "gpu": true,
++            "disk": true,
++            "barCpu": true,
++            "barRam": true,
++            "barGpu": true,
++            "barDisk": true,
++            "dashTemp": true,
++            "barTemp": true
++        }
+     }
+diff --git a/modules/bar/BarContent.qml b/modules/bar/BarContent.qml
+index b9e57ca7..ce6f6329 100644
+--- a/modules/bar/BarContent.qml
++++ b/modules/bar/BarContent.qml
+@@ -195,2 +195,8 @@ Item {
+ 
++    // Resource monitor placement — top-level bindings ensure reactive updates on config change
++    readonly property bool resourceMonitorEnabled: Config.system.resources ? Config.system.resources.enabled !== false : false
++    readonly property bool resourceMonitorInBar: resourceMonitorEnabled && (Config.system.resources ? (Config.system.resources.location === "bar" || Config.system.resources.location === "both") : false)
++    readonly property bool resourceMonitorLeft: resourceMonitorInBar && (Config.system.resources ? Config.system.resources.barSide !== "right" : true)
++    readonly property bool resourceMonitorRight: resourceMonitorInBar && !resourceMonitorLeft
++
+     // The hitbox for the mask
+@@ -461,2 +467,15 @@ Item {
+ 
++                        // Resource Monitor — left position (after pin button)
++                        Loader {
++                            active: root.resourceMonitorLeft
++                            visible: active
++                            Layout.alignment: Qt.AlignVCenter
++                            sourceComponent: BarResourceMonitor {
++                                bar: root
++                                layerEnabled: root.shadowsEnabled
++                                startRadius: root.outerRadius
++                                endRadius: root.outerRadius
++                            }
++                        }
++
+                         Item {
+@@ -501,2 +520,15 @@ Item {
+ 
++                        // Resource Monitor — right position (before presets)
++                        Loader {
++                            active: root.resourceMonitorRight
++                            visible: active
++                            Layout.alignment: Qt.AlignVCenter
++                            sourceComponent: BarResourceMonitor {
++                                bar: root
++                                layerEnabled: root.shadowsEnabled
++                                startRadius: root.outerRadius
++                                endRadius: root.outerRadius
++                            }
++                        }
++
+                         PresetsButton {
+@@ -594,2 +626,15 @@ Item {
+ 
++                        // Resource Monitor — top position (barSide = left)
++                        Loader {
++                            active: root.resourceMonitorLeft
++                            visible: active
++                            Layout.fillWidth: true
++                            sourceComponent: BarResourceMonitor {
++                                bar: root
++                                layerEnabled: root.shadowsEnabled
++                                startRadius: root.outerRadius
++                                endRadius: root.outerRadius
++                            }
++                        }
++
+                         // Center Group Container
+@@ -729,2 +774,15 @@ Item {
+ 
++                        // Resource Monitor — bottom position (barSide = right)
++                        Loader {
++                            active: root.resourceMonitorRight
++                            visible: active
++                            Layout.fillWidth: true
++                            sourceComponent: BarResourceMonitor {
++                                bar: root
++                                layerEnabled: root.shadowsEnabled
++                                startRadius: root.outerRadius
++                                endRadius: root.outerRadius
++                            }
++                        }
++
+                         ControlsButton {
+diff --git a/modules/bar/BarResourceMonitor.qml b/modules/bar/BarResourceMonitor.qml
+new file mode 100644
+index 00000000..535494bb
+--- /dev/null
++++ b/modules/bar/BarResourceMonitor.qml
+@@ -0,0 +1,702 @@
++pragma ComponentBehavior: Bound
++import QtQuick
++import QtQuick.Layouts
++import qs.modules.theme
++import qs.modules.components
++import qs.modules.services
++import qs.config
++
++Item {
++    id: root
++
++    required property var bar
++
++    property bool vertical: bar.orientation === "vertical"
++    property bool isHovered: false
++    property bool layerEnabled: true
++
++    property real startRadius: 0
++    property real endRadius: 0
++
++    // I18n helper — works with or without i18n PR merged
++    function tr(key, fallback) {
++        try {
++            const val = I18n.t(key);
++            return (val && val !== key) ? val : fallback;
++        } catch (e) {
++            return fallback;
++        }
++    }
++
++    // Bar-specific visibility (show.barCpu/barRam/barGpu/barDisk/barTemp)
++    readonly property bool showCpu:  Config.system.resources && Config.system.resources.show ? Config.system.resources.show.barCpu  !== false : true
++    readonly property bool showRam:  Config.system.resources && Config.system.resources.show ? Config.system.resources.show.barRam  !== false : true
++    readonly property bool showGpu:  Config.system.resources && Config.system.resources.show ? Config.system.resources.show.barGpu  !== false : true
++    readonly property bool showDisk: Config.system.resources && Config.system.resources.show ? Config.system.resources.show.barDisk !== false : true
++    readonly property bool showTemp: Config.system.resources && Config.system.resources.show ? Config.system.resources.show.barTemp !== false : true
++
++    function gpuColor(vendor) {
++        switch ((vendor || "").toLowerCase()) {
++        case "nvidia": return Colors.green;
++        case "amd":    return Colors.red;
++        case "intel":  return Colors.blue;
++        default:       return Colors.magenta;
++        }
++    }
++
++    // In vertical mode don't report a wide implicitWidth — let fillWidth handle sizing
++    implicitWidth: root.vertical ? 0 : bg.implicitWidth
++    implicitHeight: bg.implicitHeight
++    Layout.preferredWidth: root.vertical ? 0 : bg.implicitWidth
++    Layout.preferredHeight: bg.implicitHeight
++    Layout.fillWidth: root.vertical
++    Layout.alignment: Qt.AlignVCenter
++
++    // Fixed-width metrics so numeric values don't cause layout jitter
++    TextMetrics {
++        id: pctMetrics
++        font.family: Config.theme.font
++        font.pixelSize: Styling.fontSize(-1)
++        text: "100%"
++    }
++    TextMetrics {
++        id: tempMetrics
++        font.family: Config.theme.font
++        font.pixelSize: Styling.fontSize(-2)
++        text: "100°"
++    }
++    readonly property real pctWidth: pctMetrics.width
++    readonly property real tempWidth: tempMetrics.width
++    TextMetrics {
++        id: pctMetricsSmall
++        font.family: Config.theme.font
++        font.pixelSize: Styling.fontSize(-2)
++        text: "100%"
++    }
++    readonly property real pctWidthSmall: pctMetricsSmall.width
++    // Foreground color of the bg tile — switches when popup opens (primary variant)
++    readonly property color itemColor: bg.item
++
++    HoverHandler {
++        onHoveredChanged: root.isHovered = hovered
++    }
++
++    StyledRect {
++        id: bg
++        variant: popup.isOpen ? "primary" : "bg"
++        anchors.fill: parent
++        enableShadow: root.layerEnabled
++
++        implicitWidth: root.vertical ? 0 : (itemsRow.implicitWidth + 16)
++        implicitHeight: root.vertical ? (itemsCol.implicitHeight + 16) : 36
++
++        topLeftRadius:    root.vertical ? root.startRadius : root.startRadius
++        topRightRadius:   root.vertical ? root.startRadius : root.endRadius
++        bottomLeftRadius: root.vertical ? root.endRadius   : root.startRadius
++        bottomRightRadius: root.vertical ? root.endRadius  : root.endRadius
++
++        Rectangle {
++            anchors.fill: parent
++            color: Styling.srItem("overprimary")
++            opacity: popup.isOpen ? 0 : (root.isHovered ? 0.12 : 0)
++            radius: parent.radius ?? 0
++            Behavior on opacity {
++                enabled: Config.animDuration > 0
++                NumberAnimation { duration: Config.animDuration / 2 }
++            }
++        }
++
++        // ── Vertical chip (icon above value, one column per metric) ──
++        ColumnLayout {
++            id: itemsCol
++            anchors.centerIn: parent
++            visible: root.vertical
++            spacing: 4
++
++            Loader {
++                active: root.showCpu
++                visible: active
++                Layout.alignment: Qt.AlignHCenter
++                sourceComponent: ColumnLayout {
++                    spacing: 0
++                    Text {
++                        Layout.alignment: Qt.AlignHCenter
++                        Layout.preferredWidth: root.pctWidthSmall
++                        horizontalAlignment: Text.AlignHCenter
++                        text: Icons.cpu; font.family: Icons.font; font.pixelSize: 13
++                        color: popup.isOpen ? root.itemColor : Colors.red
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                    Text {
++                        Layout.alignment: Qt.AlignHCenter
++                        Layout.preferredWidth: root.pctWidthSmall
++                        horizontalAlignment: Text.AlignHCenter
++                        text: Math.round(SystemResources.cpuUsage) + "%"
++                        font.family: Config.theme.font; font.pixelSize: Styling.fontSize(-2); font.weight: Font.Medium
++                        color: popup.isOpen ? root.itemColor : Colors.overBackground
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                }
++            }
++            Loader {
++                active: root.showRam
++                visible: active
++                Layout.alignment: Qt.AlignHCenter
++                sourceComponent: ColumnLayout {
++                    spacing: 0
++                    Text {
++                        Layout.alignment: Qt.AlignHCenter
++                        Layout.preferredWidth: root.pctWidthSmall
++                        horizontalAlignment: Text.AlignHCenter
++                        text: Icons.ram; font.family: Icons.font; font.pixelSize: 13
++                        color: popup.isOpen ? root.itemColor : Colors.cyan
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                    Text {
++                        Layout.alignment: Qt.AlignHCenter
++                        Layout.preferredWidth: root.pctWidthSmall
++                        horizontalAlignment: Text.AlignHCenter
++                        text: Math.round(SystemResources.ramUsage) + "%"
++                        font.family: Config.theme.font; font.pixelSize: Styling.fontSize(-2); font.weight: Font.Medium
++                        color: popup.isOpen ? root.itemColor : Colors.overBackground
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                }
++            }
++            Loader {
++                active: root.showGpu && SystemResources.gpuDetected
++                visible: active
++                Layout.alignment: Qt.AlignHCenter
++                sourceComponent: ColumnLayout {
++                    spacing: 0
++                    Text {
++                        Layout.alignment: Qt.AlignHCenter
++                        Layout.preferredWidth: root.pctWidthSmall
++                        horizontalAlignment: Text.AlignHCenter
++                        text: Icons.gpu; font.family: Icons.font; font.pixelSize: 13
++                        color: popup.isOpen ? root.itemColor : root.gpuColor(SystemResources.gpuVendors[0] || "")
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                    Text {
++                        Layout.alignment: Qt.AlignHCenter
++                        Layout.preferredWidth: root.pctWidthSmall
++                        horizontalAlignment: Text.AlignHCenter
++                        text: Math.round(SystemResources.gpuUsages[0] || 0) + "%"
++                        font.family: Config.theme.font; font.pixelSize: Styling.fontSize(-2); font.weight: Font.Medium
++                        color: popup.isOpen ? root.itemColor : Colors.overBackground
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                }
++            }
++            Loader {
++                active: root.showDisk && SystemResources.validDisks.length > 0
++                visible: active
++                Layout.alignment: Qt.AlignHCenter
++                sourceComponent: ColumnLayout {
++                    spacing: 0
++                    Text {
++                        Layout.alignment: Qt.AlignHCenter
++                        Layout.preferredWidth: root.pctWidthSmall
++                        horizontalAlignment: Text.AlignHCenter
++                        text: Icons.disk; font.family: Icons.font; font.pixelSize: 13
++                        color: popup.isOpen ? root.itemColor : Colors.yellow
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                    Text {
++                        Layout.alignment: Qt.AlignHCenter
++                        Layout.preferredWidth: root.pctWidthSmall
++                        horizontalAlignment: Text.AlignHCenter
++                        readonly property string firstDisk: SystemResources.validDisks.length > 0 ? SystemResources.validDisks[0] : "/"
++                        text: Math.round(SystemResources.diskUsage[firstDisk] || 0) + "%"
++                        font.family: Config.theme.font; font.pixelSize: Styling.fontSize(-2); font.weight: Font.Medium
++                        color: popup.isOpen ? root.itemColor : Colors.overBackground
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                }
++            }
++        }
++
++        // ── Horizontal chip (icon+value per metric in a row) ──────────
++        RowLayout {
++            id: itemsRow
++            anchors.centerIn: parent
++            visible: !root.vertical
++            spacing: 8
++
++            // ── CPU ──────────────────────────────────────────────────
++            Loader {
++                active: root.showCpu
++                visible: active
++                sourceComponent: RowLayout {
++                    spacing: 3
++                    Text {
++                        text: Icons.cpu
++                        font.family: Icons.font
++                        font.pixelSize: 13
++                        color: popup.isOpen ? root.itemColor : Colors.red
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                    Text {
++                        text: Math.round(SystemResources.cpuUsage) + "%"
++                        font.family: Config.theme.font
++                        font.pixelSize: Styling.fontSize(-1)
++                        color: popup.isOpen ? root.itemColor : Colors.overBackground
++                        Layout.preferredWidth: root.pctWidth
++                        horizontalAlignment: Text.AlignRight
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                    Text {
++                        visible: root.showTemp && SystemResources.cpuTemp >= 0
++                        text: SystemResources.cpuTemp + "°"
++                        font.family: Config.theme.font
++                        font.pixelSize: Styling.fontSize(-2)
++                        color: popup.isOpen ? root.itemColor : Colors.overSurfaceVariant
++                        Layout.preferredWidth: root.tempWidth
++                        horizontalAlignment: Text.AlignRight
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                }
++            }
++
++            // ── Divider CPU|RAM ──────────────────────────────────────
++            Loader {
++                active: root.showCpu && root.showRam
++                visible: active
++                sourceComponent: Rectangle {
++                    width: 1; height: 16
++                    color: Colors.outline
++                    opacity: 0.4
++                }
++            }
++
++            // ── RAM ──────────────────────────────────────────────────
++            Loader {
++                active: root.showRam
++                visible: active
++                sourceComponent: RowLayout {
++                    spacing: 3
++                    Text {
++                        text: Icons.ram
++                        font.family: Icons.font
++                        font.pixelSize: 13
++                        color: popup.isOpen ? root.itemColor : Colors.cyan
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                    Text {
++                        text: Math.round(SystemResources.ramUsage) + "%"
++                        font.family: Config.theme.font
++                        font.pixelSize: Styling.fontSize(-1)
++                        color: popup.isOpen ? root.itemColor : Colors.overBackground
++                        Layout.preferredWidth: root.pctWidth
++                        horizontalAlignment: Text.AlignRight
++                        Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                    }
++                }
++            }
++
++            // ── Divider RAM|GPU ──────────────────────────────────────
++            Loader {
++                active: (root.showCpu || root.showRam) && root.showGpu && SystemResources.gpuDetected
++                visible: active
++                sourceComponent: Rectangle {
++                    width: 1; height: 16
++                    color: Colors.outline
++                    opacity: 0.4
++                }
++            }
++
++            // ── GPU(s) ───────────────────────────────────────────────
++            Loader {
++                active: root.showGpu && SystemResources.gpuDetected
++                visible: active
++                sourceComponent: RowLayout {
++                    spacing: 4
++                    Repeater {
++                        model: SystemResources.gpuCount
++                        delegate: RowLayout {
++                            required property int index
++                            spacing: 3
++                            Text {
++                                text: Icons.gpu
++                                font.family: Icons.font
++                                font.pixelSize: 13
++                                color: popup.isOpen ? root.itemColor : root.gpuColor(SystemResources.gpuVendors[index] || "")
++                                Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                            }
++                            Text {
++                                text: Math.round(SystemResources.gpuUsages[index] || 0) + "%"
++                                font.family: Config.theme.font
++                                font.pixelSize: Styling.fontSize(-1)
++                                color: popup.isOpen ? root.itemColor : Colors.overBackground
++                                Layout.preferredWidth: root.pctWidth
++                                horizontalAlignment: Text.AlignRight
++                                Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                            }
++                            Text {
++                                visible: root.showTemp && (SystemResources.gpuTemps[index] ?? -1) >= 0
++                                text: (SystemResources.gpuTemps[index] || 0) + "°"
++                                font.family: Config.theme.font
++                                font.pixelSize: Styling.fontSize(-2)
++                                color: popup.isOpen ? root.itemColor : Colors.overSurfaceVariant
++                                Layout.preferredWidth: root.tempWidth
++                                horizontalAlignment: Text.AlignRight
++                                Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                            }
++                        }
++                    }
++                }
++            }
++
++            // ── Divider GPU|Disk ─────────────────────────────────────
++            Loader {
++                active: (root.showCpu || root.showRam || (root.showGpu && SystemResources.gpuDetected)) && root.showDisk && SystemResources.validDisks.length > 0
++                visible: active
++                sourceComponent: Rectangle {
++                    width: 1; height: 16
++                    color: Colors.outline
++                    opacity: 0.4
++                }
++            }
++
++            // ── Disk(s) ──────────────────────────────────────────────
++            Loader {
++                active: root.showDisk && SystemResources.validDisks.length > 0
++                visible: active
++                sourceComponent: RowLayout {
++                    spacing: 4
++                    Repeater {
++                        model: SystemResources.validDisks
++                        delegate: RowLayout {
++                            required property string modelData
++                            spacing: 3
++                            Text {
++                                text: Icons.disk
++                                font.family: Icons.font
++                                font.pixelSize: 13
++                                color: popup.isOpen ? root.itemColor : Colors.yellow
++                                Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                            }
++                            Text {
++                                text: Math.round(SystemResources.diskUsage[modelData] || 0) + "%"
++                                font.family: Config.theme.font
++                                font.pixelSize: Styling.fontSize(-1)
++                                color: popup.isOpen ? root.itemColor : Colors.overBackground
++                                Layout.preferredWidth: root.pctWidth
++                                horizontalAlignment: Text.AlignRight
++                                Behavior on color { enabled: Config.animDuration > 0; ColorAnimation { duration: Config.animDuration / 2 } }
++                            }
++                        }
++                    }
++                }
++            }
++        }
++
++        MouseArea {
++            anchors.fill: parent
++            cursorShape: Qt.PointingHandCursor
++            onClicked: popup.toggle()
++        }
++
++        StyledToolTip {
++            show: root.isHovered && !popup.isOpen
++            tooltipText: root.tr("bar.resources.tooltip", "System Resources")
++        }
++    }
++
++    // ── Detail popup ─────────────────────────────────────────────────
++    BarPopup {
++        id: popup
++        anchorItem: bg
++        bar: root.bar
++        // In vertical bar bg.width is the narrow bar width — use fixed width instead
++        contentWidth: root.vertical ? 240 : bg.width
++        contentHeight: popupColumn.implicitHeight + popup.popupPadding * 2
++
++        ColumnLayout {
++            id: popupColumn
++            anchors.fill: parent
++            spacing: 4
++
++            // Shown when all metrics are hidden
++            Text {
++                visible: !root.showCpu && !root.showRam && !(root.showGpu && SystemResources.gpuDetected) && !(root.showDisk && SystemResources.validDisks.length > 0)
++                Layout.fillWidth: true
++                horizontalAlignment: Text.AlignHCenter
++                text: root.tr("bar.resources.nothing", "No metrics enabled")
++                font.family: Config.theme.font
++                font.pixelSize: Styling.fontSize(-1)
++                color: Colors.overSurfaceVariant
++            }
++
++            // CPU detail
++            Loader {
++                active: root.showCpu
++                visible: active
++                Layout.fillWidth: true
++                sourceComponent: StyledRect {
++                    variant: "common"
++                    implicitHeight: detailCpuRow.implicitHeight + 12
++                    radius: Styling.radius(-2)
++
++                    RowLayout {
++                        id: detailCpuRow
++                        anchors {
++                            left: parent.left; right: parent.right
++                            verticalCenter: parent.verticalCenter
++                            leftMargin: 10; rightMargin: 10
++                        }
++                        spacing: 8
++
++                        Text {
++                            text: Icons.cpu
++                            font.family: Icons.font
++                            font.pixelSize: 16
++                            color: Colors.red
++                        }
++
++                        ColumnLayout {
++                            Layout.fillWidth: true
++                            spacing: 1
++
++                            RowLayout {
++                                Layout.fillWidth: true
++
++                                Text {
++                                    text: "CPU"
++                                    font.family: Config.theme.font
++                                    font.pixelSize: Styling.fontSize(-1)
++                                    font.weight: Font.Medium
++                                    color: Colors.overBackground
++                                    Layout.fillWidth: true
++                                }
++
++                                Text {
++                                    visible: root.showTemp && SystemResources.cpuTemp >= 0
++                                    text: SystemResources.cpuTemp + "°C"
++                                    font.family: Config.theme.font
++                                    font.pixelSize: Styling.fontSize(-2)
++                                    color: Colors.overSurfaceVariant
++                                }
++
++                                Text {
++                                    text: Math.round(SystemResources.cpuUsage) + "%"
++                                    font.family: Config.theme.font
++                                    font.pixelSize: Styling.fontSize(-1)
++                                    font.weight: Font.Medium
++                                    color: Colors.overBackground
++                                }
++                            }
++
++                            Text {
++                                text: SystemResources.cpuModel
++                                visible: SystemResources.cpuModel !== ""
++                                font.family: Config.theme.font
++                                font.pixelSize: Styling.fontSize(-2)
++                                color: Colors.overSurfaceVariant
++                                Layout.fillWidth: true
++                                elide: Text.ElideRight
++                            }
++                        }
++                    }
++                }
++            }
++
++            // RAM detail
++            Loader {
++                active: root.showRam
++                visible: active
++                Layout.fillWidth: true
++                sourceComponent: StyledRect {
++                    variant: "common"
++                    implicitHeight: detailRamRow.implicitHeight + 12
++                    radius: Styling.radius(-2)
++
++                    RowLayout {
++                        id: detailRamRow
++                        anchors {
++                            left: parent.left; right: parent.right
++                            verticalCenter: parent.verticalCenter
++                            leftMargin: 10; rightMargin: 10
++                        }
++                        spacing: 8
++
++                        Text {
++                            text: Icons.ram
++                            font.family: Icons.font
++                            font.pixelSize: 16
++                            color: Colors.cyan
++                        }
++
++                        ColumnLayout {
++                            Layout.fillWidth: true
++                            spacing: 1
++
++                            RowLayout {
++                                Layout.fillWidth: true
++
++                                Text {
++                                    text: "RAM"
++                                    font.family: Config.theme.font
++                                    font.pixelSize: Styling.fontSize(-1)
++                                    font.weight: Font.Medium
++                                    color: Colors.overBackground
++                                    Layout.fillWidth: true
++                                }
++
++                                Text {
++                                    text: Math.round(SystemResources.ramUsage) + "%"
++                                    font.family: Config.theme.font
++                                    font.pixelSize: Styling.fontSize(-1)
++                                    font.weight: Font.Medium
++                                    color: Colors.overBackground
++                                }
++                            }
++
++                            Text {
++                                text: {
++                                    const used = (SystemResources.ramUsed / 1024 / 1024).toFixed(1);
++                                    const total = (SystemResources.ramTotal / 1024 / 1024).toFixed(1);
++                                    return used + " / " + total + " GB";
++                                }
++                                font.family: Config.theme.font
++                                font.pixelSize: Styling.fontSize(-2)
++                                color: Colors.overSurfaceVariant
++                                Layout.fillWidth: true
++                            }
++                        }
++                    }
++                }
++            }
++
++            // GPU(s) detail
++            Loader {
++                active: root.showGpu && SystemResources.gpuDetected
++                visible: active
++                Layout.fillWidth: true
++                sourceComponent: ColumnLayout {
++                    spacing: 4
++                    Repeater {
++                        model: SystemResources.gpuCount
++                        delegate: StyledRect {
++                            required property int index
++                            variant: "common"
++                            implicitHeight: detailGpuRow.implicitHeight + 12
++                            radius: Styling.radius(-2)
++                            Layout.fillWidth: true
++
++                            RowLayout {
++                                id: detailGpuRow
++                                anchors {
++                                    left: parent.left; right: parent.right
++                                    verticalCenter: parent.verticalCenter
++                                    leftMargin: 10; rightMargin: 10
++                                }
++                                spacing: 8
++
++                                Text {
++                                    text: Icons.gpu
++                                    font.family: Icons.font
++                                    font.pixelSize: 16
++                                    color: root.gpuColor(SystemResources.gpuVendors[index] || "")
++                                }
++
++                                ColumnLayout {
++                                    Layout.fillWidth: true
++                                    spacing: 1
++
++                                    RowLayout {
++                                        Layout.fillWidth: true
++
++                                        Text {
++                                            text: SystemResources.gpuNames[index] || "GPU"
++                                            font.family: Config.theme.font
++                                            font.pixelSize: Styling.fontSize(-1)
++                                            font.weight: Font.Medium
++                                            color: Colors.overBackground
++                                            Layout.fillWidth: true
++                                            elide: Text.ElideRight
++                                        }
++
++                                        Text {
++                                            visible: root.showTemp && (SystemResources.gpuTemps[index] ?? -1) >= 0
++                                            text: (SystemResources.gpuTemps[index] || 0) + "°C"
++                                            font.family: Config.theme.font
++                                            font.pixelSize: Styling.fontSize(-2)
++                                            color: Colors.overSurfaceVariant
++                                        }
++
++                                        Text {
++                                            text: Math.round(SystemResources.gpuUsages[index] || 0) + "%"
++                                            font.family: Config.theme.font
++                                            font.pixelSize: Styling.fontSize(-1)
++                                            font.weight: Font.Medium
++                                            color: Colors.overBackground
++                                        }
++                                    }
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++
++            // Disk(s) detail
++            Loader {
++                active: root.showDisk && SystemResources.validDisks.length > 0
++                visible: active
++                Layout.fillWidth: true
++                sourceComponent: ColumnLayout {
++                    spacing: 4
++                    Repeater {
++                        model: SystemResources.validDisks
++                        delegate: StyledRect {
++                            required property string modelData
++                            variant: "common"
++                            implicitHeight: detailDiskRow.implicitHeight + 12
++                            radius: Styling.radius(-2)
++                            Layout.fillWidth: true
++
++                            RowLayout {
++                                id: detailDiskRow
++                                anchors {
++                                    left: parent.left; right: parent.right
++                                    verticalCenter: parent.verticalCenter
++                                    leftMargin: 10; rightMargin: 10
++                                }
++                                spacing: 8
++
++                                Text {
++                                    text: Icons.disk
++                                    font.family: Icons.font
++                                    font.pixelSize: 16
++                                    color: Colors.yellow
++                                }
++
++                                RowLayout {
++                                    Layout.fillWidth: true
++
++                                    Text {
++                                        text: modelData
++                                        font.family: Config.theme.monoFont
++                                        font.pixelSize: Styling.fontSize(-1)
++                                        color: Colors.overBackground
++                                        Layout.fillWidth: true
++                                        elide: Text.ElideMiddle
++                                    }
++
++                                    Text {
++                                        text: Math.round(SystemResources.diskUsage[modelData] || 0) + "%"
++                                        font.family: Config.theme.font
++                                        font.pixelSize: Styling.fontSize(-1)
++                                        font.weight: Font.Medium
++                                        color: Colors.overBackground
++                                    }
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++        }
++    }
++}
+diff --git a/modules/components/SegmentedSwitch.qml b/modules/components/SegmentedSwitch.qml
+index 8c1e31b5..d8cfe9fa 100644
+--- a/modules/components/SegmentedSwitch.qml
++++ b/modules/components/SegmentedSwitch.qml
+@@ -76,4 +76,4 @@ StyledRect {
+                     Layout.fillHeight: true
++                    Layout.fillWidth: true
+                     Layout.minimumWidth: root.buttonSize
+-                    Layout.preferredWidth: contentRow.implicitWidth + 16 // Add some padding
+ 
+diff --git a/modules/services/SystemResources.qml b/modules/services/SystemResources.qml
+index f14ab811..def2c20e 100644
+--- a/modules/services/SystemResources.qml
++++ b/modules/services/SystemResources.qml
+@@ -58,5 +58,8 @@ Singleton {
+ 
+-    // Subscription only lives while the dashboard Metrics tab is open,
+-    // preserving the original resource-saving behaviour (no dGPU polling).
+-    readonly property bool monitoringActive: GlobalStates.dashboardOpen && GlobalStates.dashboardCurrentTab === 2 && root.validDisks.length > 0
++    // Keep the daemon subscription dormant unless a visible surface needs it.
++    readonly property bool monitoringActive: (Config.system.resources?.enabled ?? true)
++        && ((GlobalStates.dashboardOpen && GlobalStates.dashboardCurrentTab === 2)
++            || Config.system.resources?.location === "bar"
++            || Config.system.resources?.location === "both")
++        && root.validDisks.length > 0
+ 
+diff --git a/modules/widgets/dashboard/Dashboard.qml b/modules/widgets/dashboard/Dashboard.qml
+index 6b60935c..6c1e633f 100644
+--- a/modules/widgets/dashboard/Dashboard.qml
++++ b/modules/widgets/dashboard/Dashboard.qml
+@@ -25,4 +25,14 @@ NotchAnimationBehavior {
+ 
+-    readonly property var tabModel: [Icons.widgets, Icons.wallpapers, Icons.heartbeat]
++    readonly property bool resourcesInDashboard: !(Config.system.resources && Config.system.resources.location === "bar")
++    readonly property var tabModel: {
++        let m = [Icons.widgets, Icons.wallpapers];
++        if (root.resourcesInDashboard) m.push(Icons.heartbeat);
++        return m;
++    }
+     readonly property int tabCount: tabModel.length
++
++    onResourcesInDashboardChanged: {
++        if (!resourcesInDashboard && root.state.currentTab === 2)
++            stack.navigateToTab(0);
++    }
+     readonly property int tabSpacing: 8
+@@ -457,5 +467,6 @@ NotchAnimationBehavior {
+ 
+-                // Tab 2: Metrics
++                // Tab 2: Metrics (only when resources are displayed in dashboard, not bar)
+                 TabLoader {
+                     property int index: 2
++                    active: (root.shouldTabBeLoaded(index) || root.state.currentTab === index) && root.resourcesInDashboard
+                     sourceComponent: metricsComponent
+diff --git a/modules/widgets/dashboard/controls/SystemPanel.qml b/modules/widgets/dashboard/controls/SystemPanel.qml
+index 144db9b7..f15517dd 100644
+--- a/modules/widgets/dashboard/controls/SystemPanel.qml
++++ b/modules/widgets/dashboard/controls/SystemPanel.qml
+@@ -19,2 +19,12 @@ Item {
+ 
++    // I18n helper — returns English fallback when I18n is unavailable or key missing
++    function tr(key, fallback) {
++        try {
++            const val = I18n.t(key);
++            return (val && val !== key) ? val : fallback;
++        } catch (e) {
++            return fallback;
++        }
++    }
++
+     component SectionButton: StyledRect {
+@@ -63,2 +73,49 @@ Item {
+ 
++    // Option selector — same visual style as ShellPanel/CompositorPanel
++    component SelectorRow: RowLayout {
++        id: selectorRow
++        property var options: []   // [{ label: string, value: string }]
++        property string value: ""
++        signal valueSelected(string newValue)
++
++        Layout.fillWidth: true
++        spacing: 4
++
++        Repeater {
++            model: selectorRow.options
++
++            delegate: StyledRect {
++                id: optBtn
++                required property var modelData
++                required property int index
++
++                readonly property bool isSelected: optBtn.modelData.value === selectorRow.value
++                property bool isHovered: false
++
++                variant: isSelected ? "primary" : (isHovered ? "focus" : "common")
++                Layout.fillWidth: true
++                Layout.preferredHeight: 36
++                radius: Styling.radius(0)
++
++                Text {
++                    anchors.centerIn: parent
++                    text: optBtn.modelData.label
++                    font.family: Config.theme.font
++                    font.pixelSize: Styling.fontSize(0)
++                    font.weight: optBtn.isSelected ? Font.DemiBold : Font.Normal
++                    color: optBtn.item
++                }
++
++                MouseArea {
++                    anchors.fill: parent
++                    hoverEnabled: true
++                    cursorShape: Qt.PointingHandCursor
++                    onEntered: optBtn.isHovered = true
++                    onExited: optBtn.isHovered = false
++                    onClicked: selectorRow.valueSelected(optBtn.modelData.value)
++                }
++            }
++        }
++    }
++
+     // Main content
+@@ -86,17 +143,30 @@ Item {
+                     title: root.currentSection === "" ? "System" : (root.currentSection === "system" ? "System Resources" : (root.currentSection.charAt(0).toUpperCase() + root.currentSection.slice(1)))
+-                    statusText: ""
++                    statusText: {
++                        if (root.currentSection === "system") {
++                            if (systemSection.savedSuccess)
++                                return root.tr("system.resources.saved", "Saved");
++                            if (systemSection.hasChanges)
++                                return root.tr("system.resources.unsaved", "Unsaved changes");
++                        }
++                        return "";
++                    }
++                    statusColor: systemSection.savedSuccess ? Colors.green : Styling.srItem("overprimary")
+ 
+                     actions: {
++                        let acts = [];
+                         if (root.currentSection !== "") {
+-                            return [
+-                                {
+-                                    icon: Icons.arrowLeft,
+-                                    tooltip: "Back",
+-                                    onClicked: function () {
+-                                        root.currentSection = "";
+-                                    }
+-                                }
+-                            ];
++                            acts.push({
++                                icon: Icons.arrowLeft,
++                                tooltip: "Back",
++                                onClicked: function () { root.currentSection = ""; }
++                            });
++                        }
++                        if (root.currentSection === "system" && systemSection.hasChanges) {
++                            acts.push({
++                                icon: Icons.accept,
++                                tooltip: root.tr("settings.save", "Save"),
++                                onClicked: function () { systemSection.saveToConfig(); }
++                            });
+                         }
+-                        return [];
++                        return acts;
+                     }
+@@ -442,4 +512,4 @@ Item {
+                     ColumnLayout {
++                        id: systemSection
+                         visible: root.currentSection === "system"
+-                        property string settingsSection: "system"
+                         Layout.fillWidth: true
+@@ -447,68 +517,351 @@ Item {
+ 
+-                        Text {
+-                            text: "System Resources"
+-                            font.family: Config.theme.font
+-                            font.pixelSize: Styling.fontSize(-1)
+-                            font.weight: Font.Medium
+-                            color: Colors.overSurfaceVariant
+-                            Layout.bottomMargin: -4
++                        // ── Pending state ─────────────────────────────────────
++                        property bool resEnabled: true
++                        property string resLocation: "dashboard"
++                        property string resBarSide: "left"
++                        property bool resShowCpu: true
++                        property bool resShowRam: true
++                        property bool resShowGpu: true
++                        property bool resShowDisk: true
++                        property bool resShowBarCpu: true
++                        property bool resShowBarRam: true
++                        property bool resShowBarGpu: true
++                        property bool resShowBarDisk: true
++                        property bool resShowDashTemp: true
++                        property bool resShowBarTemp: true
++                        property bool savedSuccess: false
++
++                        property bool hasChanges: {
++                            const res = Config.system.resources;
++                            if (!res) return false;
++                            if ((res.enabled !== false) !== resEnabled) return true;
++                            if ((res.location || "dashboard") !== resLocation) return true;
++                            if ((res.barSide || "left") !== resBarSide) return true;
++                            const show = res.show;
++                            if ((show ? show.cpu !== false : true) !== resShowCpu) return true;
++                            if ((show ? show.ram !== false : true) !== resShowRam) return true;
++                            if ((show ? show.gpu !== false : true) !== resShowGpu) return true;
++                            if ((show ? show.disk !== false : true) !== resShowDisk) return true;
++                            if ((show ? show.barCpu !== false : true) !== resShowBarCpu) return true;
++                            if ((show ? show.barRam !== false : true) !== resShowBarRam) return true;
++                            if ((show ? show.barGpu !== false : true) !== resShowBarGpu) return true;
++                            if ((show ? show.barDisk !== false : true) !== resShowBarDisk) return true;
++                            if ((show ? show.dashTemp !== false : true) !== resShowDashTemp) return true;
++                            if ((show ? show.barTemp !== false : true) !== resShowBarTemp) return true;
++                            return false;
+                         }
+ 
+-                        Text {
+-                            text: "Configure which disks to monitor"
+-                            font.family: Config.theme.font
+-                            font.pixelSize: Styling.fontSize(-2)
+-                            color: Colors.overSurfaceVariant
+-                            opacity: 0.7
++                        function resetToConfig() {
++                            const res = Config.system.resources;
++                            if (!res) return;
++                            resEnabled = res.enabled !== false;
++                            resLocation = res.location || "dashboard";
++                            resBarSide = res.barSide || "left";
++                            const show = res.show;
++                            resShowCpu = show ? show.cpu !== false : true;
++                            resShowRam = show ? show.ram !== false : true;
++                            resShowGpu = show ? show.gpu !== false : true;
++                            resShowDisk = show ? show.disk !== false : true;
++                            resShowBarCpu = show ? show.barCpu !== false : true;
++                            resShowBarRam = show ? show.barRam !== false : true;
++                            resShowBarGpu = show ? show.barGpu !== false : true;
++                            resShowBarDisk = show ? show.barDisk !== false : true;
++                            resShowDashTemp = show ? show.dashTemp !== false : true;
++                            resShowBarTemp = show ? show.barTemp !== false : true;
++                        }
++
++                        function saveToConfig() {
++                            const res = Config.system.resources;
++                            if (!res) return;
++                            res.enabled = resEnabled;
++                            res.location = resLocation;
++                            res.barSide = resBarSide;
++                            if (res.show) {
++                                res.show.cpu = resShowCpu;
++                                res.show.ram = resShowRam;
++                                res.show.gpu = resShowGpu;
++                                res.show.disk = resShowDisk;
++                                res.show.barCpu = resShowBarCpu;
++                                res.show.barRam = resShowBarRam;
++                                res.show.barGpu = resShowBarGpu;
++                                res.show.barDisk = resShowBarDisk;
++                                res.show.dashTemp = resShowDashTemp;
++                                res.show.barTemp = resShowBarTemp;
++                            }
++                            savedSuccess = true;
++                            savedTimer.restart();
++                        }
++
++                        Component.onCompleted: resetToConfig()
++                        onVisibleChanged: if (visible) resetToConfig()
++
++                        Timer {
++                            id: savedTimer
++                            interval: 2000
++                            onTriggered: systemSection.savedSuccess = false
+                         }
+ 
+-                        // Disks list
++                        // ── Global enable toggle ──────────────────────────────
++                        ToggleRow {
++                            Layout.fillWidth: true
++                            label: root.tr("system.resources.enabled", "Enable Resource Monitor")
++                            checked: systemSection.resEnabled
++                            onToggled: checked => { systemSection.resEnabled = checked; }
++                        }
++
++                        // ── Settings (dimmed when monitor is disabled) ─────────
+                         ColumnLayout {
+                             Layout.fillWidth: true
+-                            spacing: 4
++                            spacing: 8
++                            enabled: systemSection.resEnabled
++                            opacity: systemSection.resEnabled ? 1.0 : 0.4
++
++                            Behavior on opacity {
++                                enabled: Config.animDuration > 0
++                                NumberAnimation { duration: Config.animDuration / 2 }
++                            }
++
++                            Text {
++                                text: "System Resources"
++                                font.family: Config.theme.font
++                                font.pixelSize: Styling.fontSize(-1)
++                                font.weight: Font.Medium
++                                color: Colors.overSurfaceVariant
++                                Layout.bottomMargin: -4
++                            }
++
++                            Text {
++                                text: root.tr("system.resources.description", "Configure resource display and monitored disks")
++                                font.family: Config.theme.font
++                                font.pixelSize: Styling.fontSize(-2)
++                                color: Colors.overSurfaceVariant
++                                opacity: 0.7
++                            }
++
++                            // ── Display Location ──────────────────────────────
++                            Text {
++                                text: root.tr("system.resources.location", "Display Location")
++                                font.family: Config.theme.font
++                                font.pixelSize: Styling.fontSize(-1)
++                                font.weight: Font.Medium
++                                color: Colors.overSurfaceVariant
++                                Layout.topMargin: 4
++                                Layout.bottomMargin: -4
++                            }
+ 
+-                            Repeater {
+-                                id: disksRepeater
+-                                model: Config.system.disks
++                            SelectorRow {
++                                options: [
++                                    { label: root.tr("system.resources.location_dashboard", "Dashboard"), value: "dashboard" },
++                                    { label: root.tr("system.resources.location_bar", "Bar"),             value: "bar" },
++                                    { label: root.tr("system.resources.location_both", "Both"),           value: "both" }
++                                ]
++                                value: systemSection.resLocation
++                                onValueSelected: newValue => { systemSection.resLocation = newValue; }
++                            }
+ 
+-                                delegate: RowLayout {
+-                                    id: diskRow
+-                                    required property string modelData
+-                                    required property int index
++                            // ── Bar Side (visible only when location includes bar) ───
++                            Text {
++                                visible: systemSection.resLocation === "bar" || systemSection.resLocation === "both"
++                                text: root.tr("system.resources.bar_side", "Bar Position")
++                                font.family: Config.theme.font
++                                font.pixelSize: Styling.fontSize(-1)
++                                font.weight: Font.Medium
++                                color: Colors.overSurfaceVariant
++                                Layout.topMargin: 4
++                                Layout.bottomMargin: -4
++                            }
+ 
++                            SelectorRow {
++                                visible: systemSection.resLocation === "bar" || systemSection.resLocation === "both"
++                                options: [
++                                    { label: root.tr("system.resources.bar_side_left", "Left"),  value: "left" },
++                                    { label: root.tr("system.resources.bar_side_right", "Right"), value: "right" }
++                                ]
++                                value: systemSection.resBarSide
++                                onValueSelected: newValue => { systemSection.resBarSide = newValue; }
++                            }
++
++                            // ── Visible Items ─────────────────────────────────
++                            Text {
++                                text: root.tr("system.resources.show_items", "Visible Items")
++                                font.family: Config.theme.font
++                                font.pixelSize: Styling.fontSize(-1)
++                                font.weight: Font.Medium
++                                color: Colors.overSurfaceVariant
++                                Layout.topMargin: 4
++                                Layout.bottomMargin: -4
++                            }
++
++                            // Dashboard items (shown when location = dashboard or both)
++                            ColumnLayout {
++                                Layout.fillWidth: true
++                                spacing: 4
++                                visible: systemSection.resLocation !== "bar"
++
++                                Text {
++                                    visible: systemSection.resLocation === "both"
++                                    text: root.tr("system.resources.location_dashboard", "Dashboard")
++                                    font.family: Config.theme.font
++                                    font.pixelSize: Styling.fontSize(-2)
++                                    font.weight: Font.Medium
++                                    color: Colors.overSurfaceVariant
++                                    opacity: 0.7
++                                }
++
++                                Flow {
+                                     Layout.fillWidth: true
+-                                    spacing: 8
++                                    spacing: 4
++
++                                    Repeater {
++                                        model: [
++                                            { key: "cpu",  label: root.tr("system.resources.show_cpu",  "CPU")  },
++                                            { key: "ram",  label: root.tr("system.resources.show_ram",  "RAM")  },
++                                            { key: "gpu",  label: root.tr("system.resources.show_gpu",  "GPU")  },
++                                            { key: "disk", label: root.tr("system.resources.show_disk", "Disk") }
++                                        ]
++
++                                        delegate: StyledRect {
++                                            id: visBtnDash
++                                            required property var modelData
++                                            required property int index
++
++                                            readonly property bool isOn: {
++                                                if (modelData.key === "cpu")  return systemSection.resShowCpu;
++                                                if (modelData.key === "ram")  return systemSection.resShowRam;
++                                                if (modelData.key === "gpu")  return systemSection.resShowGpu;
++                                                if (modelData.key === "disk") return systemSection.resShowDisk;
++                                                return false;
++                                            }
++                                            property bool isHovered: false
+ 
+-                                    StyledRect {
+-                                        variant: "common"
+-                                        Layout.fillWidth: true
+-                                        Layout.preferredHeight: 36
+-                                        radius: Styling.radius(-2)
++                                            variant: isOn ? "primary" : (isHovered ? "focus" : "common")
++                                            width: visBtnDashLabel.implicitWidth + 24
++                                            height: 36
++                                            radius: Styling.radius(0)
+ 
+-                                        TextInput {
+-                                            id: diskInput
+-                                            anchors.fill: parent
+-                                            anchors.margins: 8
+-                                            font.family: Config.theme.monoFont
+-                                            font.pixelSize: Styling.monoFontSize(0)
+-                                            color: Colors.overBackground
+-                                            selectByMouse: true
+-                                            clip: true
+-                                            verticalAlignment: TextInput.AlignVCenter
+-                                            text: diskRow.modelData
+-
+-                                            onEditingFinished: {
+-                                                if (text.trim() !== diskRow.modelData) {
+-                                                    let newDisks = Config.system.disks.slice();
+-                                                    newDisks[diskRow.index] = text.trim();
+-                                                    Config.system.disks = newDisks;
++                                            Text {
++                                                id: visBtnDashLabel
++                                                anchors.centerIn: parent
++                                                text: visBtnDash.modelData.label
++                                                font.family: Config.theme.font
++                                                font.pixelSize: Styling.fontSize(0)
++                                                font.weight: visBtnDash.isOn ? Font.DemiBold : Font.Normal
++                                                color: visBtnDash.item
++                                            }
++
++                                            MouseArea {
++                                                anchors.fill: parent
++                                                hoverEnabled: true
++                                                cursorShape: Qt.PointingHandCursor
++                                                onEntered: visBtnDash.isHovered = true
++                                                onExited:  visBtnDash.isHovered = false
++                                                onClicked: {
++                                                    if      (visBtnDash.modelData.key === "cpu")  systemSection.resShowCpu  = !systemSection.resShowCpu;
++                                                    else if (visBtnDash.modelData.key === "ram")  systemSection.resShowRam  = !systemSection.resShowRam;
++                                                    else if (visBtnDash.modelData.key === "gpu")  systemSection.resShowGpu  = !systemSection.resShowGpu;
++                                                    else if (visBtnDash.modelData.key === "disk") systemSection.resShowDisk = !systemSection.resShowDisk;
+                                                 }
+                                             }
++                                        }
++                                    }
++                                }
++
++                                // Temperature toggle
++                                StyledRect {
++                                    id: tempBtnDash
++                                    property bool isHovered: false
++                                    readonly property bool isOn: systemSection.resShowDashTemp
++                                    variant: isOn ? "primary" : (isHovered ? "focus" : "common")
++                                    width: tempBtnDashLabel.implicitWidth + 24
++                                    height: 36
++                                    radius: Styling.radius(0)
++                                    Text {
++                                        id: tempBtnDashLabel
++                                        anchors.centerIn: parent
++                                        text: root.tr("system.resources.show_temp", "Temp")
++                                        font.family: Config.theme.font
++                                        font.pixelSize: Styling.fontSize(0)
++                                        font.weight: tempBtnDash.isOn ? Font.DemiBold : Font.Normal
++                                        color: tempBtnDash.item
++                                    }
++                                    MouseArea {
++                                        anchors.fill: parent
++                                        hoverEnabled: true
++                                        cursorShape: Qt.PointingHandCursor
++                                        onEntered: tempBtnDash.isHovered = true
++                                        onExited:  tempBtnDash.isHovered = false
++                                        onClicked: systemSection.resShowDashTemp = !systemSection.resShowDashTemp
++                                    }
++                                }
++                            }
++
++                            // Bar items (shown when location = bar or both)
++                            ColumnLayout {
++                                Layout.fillWidth: true
++                                spacing: 4
++                                visible: systemSection.resLocation !== "dashboard"
++
++                                Text {
++                                    visible: systemSection.resLocation === "both"
++                                    text: root.tr("system.resources.location_bar", "Bar")
++                                    font.family: Config.theme.font
++                                    font.pixelSize: Styling.fontSize(-2)
++                                    font.weight: Font.Medium
++                                    color: Colors.overSurfaceVariant
++                                    opacity: 0.7
++                                }
++
++                                Flow {
++                                    Layout.fillWidth: true
++                                    spacing: 4
++
++                                    Repeater {
++                                        model: [
++                                            { key: "cpu",  label: root.tr("system.resources.show_cpu",  "CPU")  },
++                                            { key: "ram",  label: root.tr("system.resources.show_ram",  "RAM")  },
++                                            { key: "gpu",  label: root.tr("system.resources.show_gpu",  "GPU")  },
++                                            { key: "disk", label: root.tr("system.resources.show_disk", "Disk") }
++                                        ]
++
++                                        delegate: StyledRect {
++                                            id: visBtnBar
++                                            required property var modelData
++                                            required property int index
++
++                                            readonly property bool isOn: {
++                                                if (modelData.key === "cpu")  return systemSection.resShowBarCpu;
++                                                if (modelData.key === "ram")  return systemSection.resShowBarRam;
++                                                if (modelData.key === "gpu")  return systemSection.resShowBarGpu;
++                                                if (modelData.key === "disk") return systemSection.resShowBarDisk;
++                                                return false;
++                                            }
++                                            property bool isHovered: false
++
++                                            variant: isOn ? "primary" : (isHovered ? "focus" : "common")
++                                            width: visBtnBarLabel.implicitWidth + 24
++                                            height: 36
++                                            radius: Styling.radius(0)
+ 
+                                             Text {
+-                                                anchors.verticalCenter: parent.verticalCenter
+-                                                visible: !diskInput.text && !diskInput.activeFocus
+-                                                text: "e.g. /, /home..."
+-                                                font: diskInput.font
+-                                                color: Colors.overSurfaceVariant
++                                                id: visBtnBarLabel
++                                                anchors.centerIn: parent
++                                                text: visBtnBar.modelData.label
++                                                font.family: Config.theme.font
++                                                font.pixelSize: Styling.fontSize(0)
++                                                font.weight: visBtnBar.isOn ? Font.DemiBold : Font.Normal
++                                                color: visBtnBar.item
++                                            }
++
++                                            MouseArea {
++                                                anchors.fill: parent
++                                                hoverEnabled: true
++                                                cursorShape: Qt.PointingHandCursor
++                                                onEntered: visBtnBar.isHovered = true
++                                                onExited:  visBtnBar.isHovered = false
++                                                onClicked: {
++                                                    if      (visBtnBar.modelData.key === "cpu")  systemSection.resShowBarCpu  = !systemSection.resShowBarCpu;
++                                                    else if (visBtnBar.modelData.key === "ram")  systemSection.resShowBarRam  = !systemSection.resShowBarRam;
++                                                    else if (visBtnBar.modelData.key === "gpu")  systemSection.resShowBarGpu  = !systemSection.resShowBarGpu;
++                                                    else if (visBtnBar.modelData.key === "disk") systemSection.resShowBarDisk = !systemSection.resShowBarDisk;
++                                                }
+                                             }
+@@ -516,29 +869,94 @@ Item {
+                                     }
++                                }
+ 
+-                                    // Remove button
+-                                    StyledRect {
+-                                        id: removeDiskButton
+-                                        variant: removeDiskArea.containsMouse ? "focus" : "common"
+-                                        Layout.preferredWidth: 36
+-                                        Layout.preferredHeight: 36
+-                                        radius: Styling.radius(-2)
+-                                        visible: disksRepeater.count > 1
++                                // Temperature toggle
++                                StyledRect {
++                                    id: tempBtnBar
++                                    property bool isHovered: false
++                                    readonly property bool isOn: systemSection.resShowBarTemp
++                                    variant: isOn ? "primary" : (isHovered ? "focus" : "common")
++                                    width: tempBtnBarLabel.implicitWidth + 24
++                                    height: 36
++                                    radius: Styling.radius(0)
++                                    Text {
++                                        id: tempBtnBarLabel
++                                        anchors.centerIn: parent
++                                        text: root.tr("system.resources.show_temp", "Temp")
++                                        font.family: Config.theme.font
++                                        font.pixelSize: Styling.fontSize(0)
++                                        font.weight: tempBtnBar.isOn ? Font.DemiBold : Font.Normal
++                                        color: tempBtnBar.item
++                                    }
++                                    MouseArea {
++                                        anchors.fill: parent
++                                        hoverEnabled: true
++                                        cursorShape: Qt.PointingHandCursor
++                                        onEntered: tempBtnBar.isHovered = true
++                                        onExited:  tempBtnBar.isHovered = false
++                                        onClicked: systemSection.resShowBarTemp = !systemSection.resShowBarTemp
++                                    }
++                                }
++                            }
+ 
+-                                        Text {
+-                                            anchors.centerIn: parent
+-                                            text: Icons.trash
+-                                            font.family: Icons.font
+-                                            font.pixelSize: 14
+-                                            color: Colors.error
+-                                        }
++                            // ── Monitored Disks ───────────────────────────────
++                            Text {
++                                text: root.tr("system.resources.disks_title", "Monitored Disks")
++                                font.family: Config.theme.font
++                                font.pixelSize: Styling.fontSize(-1)
++                                font.weight: Font.Medium
++                                color: Colors.overSurfaceVariant
++                                Layout.topMargin: 4
++                                Layout.bottomMargin: -4
++                            }
+ 
+-                                        MouseArea {
+-                                            id: removeDiskArea
+-                                            anchors.fill: parent
+-                                            hoverEnabled: true
+-                                            cursorShape: Qt.PointingHandCursor
+-                                            onClicked: {
+-                                                let newDisks = Config.system.disks.slice();
+-                                                newDisks.splice(diskRow.index, 1);
+-                                                Config.system.disks = newDisks;
++                            // Disks list
++                            ColumnLayout {
++                                Layout.fillWidth: true
++                                spacing: 4
++
++                                Repeater {
++                                    id: disksRepeater
++                                    model: Config.system.disks
++
++                                    delegate: RowLayout {
++                                        id: diskRow
++                                        required property string modelData
++                                        required property int index
++
++                                        Layout.fillWidth: true
++                                        spacing: 8
++
++                                        StyledRect {
++                                            variant: "common"
++                                            Layout.fillWidth: true
++                                            Layout.preferredHeight: 36
++                                            radius: Styling.radius(-2)
++
++                                            TextInput {
++                                                id: diskInput
++                                                anchors.fill: parent
++                                                anchors.margins: 8
++                                                font.family: Config.theme.monoFont
++                                                font.pixelSize: Styling.monoFontSize(0)
++                                                color: Colors.overBackground
++                                                selectByMouse: true
++                                                clip: true
++                                                verticalAlignment: TextInput.AlignVCenter
++                                                text: diskRow.modelData
++
++                                                onEditingFinished: {
++                                                    if (text.trim() !== diskRow.modelData) {
++                                                        let newDisks = Config.system.disks.slice();
++                                                        newDisks[diskRow.index] = text.trim();
++                                                        Config.system.disks = newDisks;
++                                                    }
++                                                }
++
++                                                Text {
++                                                    anchors.verticalCenter: parent.verticalCenter
++                                                    visible: !diskInput.text && !diskInput.activeFocus
++                                                    text: "e.g. /, /home..."
++                                                    font: diskInput.font
++                                                    color: Colors.overSurfaceVariant
++                                                }
+                                             }
+@@ -546,5 +964,35 @@ Item {
+ 
+-                                        StyledToolTip {
+-                                            visible: removeDiskArea.containsMouse
+-                                            tooltipText: "Remove disk"
++                                        // Remove button
++                                        StyledRect {
++                                            id: removeDiskButton
++                                            variant: removeDiskArea.containsMouse ? "focus" : "common"
++                                            Layout.preferredWidth: 36
++                                            Layout.preferredHeight: 36
++                                            radius: Styling.radius(-2)
++                                            visible: disksRepeater.count > 1
++
++                                            Text {
++                                                anchors.centerIn: parent
++                                                text: Icons.trash
++                                                font.family: Icons.font
++                                                font.pixelSize: 14
++                                                color: Colors.error
++                                            }
++
++                                            MouseArea {
++                                                id: removeDiskArea
++                                                anchors.fill: parent
++                                                hoverEnabled: true
++                                                cursorShape: Qt.PointingHandCursor
++                                                onClicked: {
++                                                    let newDisks = Config.system.disks.slice();
++                                                    newDisks.splice(diskRow.index, 1);
++                                                    Config.system.disks = newDisks;
++                                                }
++                                            }
++
++                                            StyledToolTip {
++                                                visible: removeDiskArea.containsMouse
++                                                tooltipText: "Remove disk"
++                                            }
+                                         }
+@@ -552,43 +1000,43 @@ Item {
+                                 }
+-                            }
+ 
+-                            // Add disk button
+-                            StyledRect {
+-                                id: addDiskButton
+-                                variant: addDiskArea.containsMouse ? "primaryfocus" : "primary"
+-                                Layout.preferredWidth: addDiskContent.width + 24
+-                                Layout.preferredHeight: 36
+-                                radius: Styling.radius(-2)
++                                // Add disk button
++                                StyledRect {
++                                    id: addDiskButton
++                                    variant: addDiskArea.containsMouse ? "primaryfocus" : "primary"
++                                    Layout.preferredWidth: addDiskContent.width + 24
++                                    Layout.preferredHeight: 36
++                                    radius: Styling.radius(-2)
+ 
+-                                Row {
+-                                    id: addDiskContent
+-                                    anchors.centerIn: parent
+-                                    spacing: 6
++                                    Row {
++                                        id: addDiskContent
++                                        anchors.centerIn: parent
++                                        spacing: 6
+ 
+-                                    Text {
+-                                        text: Icons.plus
+-                                        font.family: Icons.font
+-                                        font.pixelSize: 14
+-                                        color: addDiskButton.item
+-                                        anchors.verticalCenter: parent.verticalCenter
+-                                    }
++                                        Text {
++                                            text: Icons.plus
++                                            font.family: Icons.font
++                                            font.pixelSize: 14
++                                            color: addDiskButton.item
++                                            anchors.verticalCenter: parent.verticalCenter
++                                        }
+ 
+-                                    Text {
+-                                        text: "Add Disk"
+-                                        font.family: Config.theme.font
+-                                        font.pixelSize: Styling.fontSize(0)
+-                                        color: addDiskButton.item
+-                                        anchors.verticalCenter: parent.verticalCenter
++                                        Text {
++                                            text: "Add Disk"
++                                            font.family: Config.theme.font
++                                            font.pixelSize: Styling.fontSize(0)
++                                            color: addDiskButton.item
++                                            anchors.verticalCenter: parent.verticalCenter
++                                        }
+                                     }
+-                                }
+ 
+-                                MouseArea {
+-                                    id: addDiskArea
+-                                    anchors.fill: parent
+-                                    hoverEnabled: true
+-                                    cursorShape: Qt.PointingHandCursor
+-                                    onClicked: {
+-                                        let newDisks = Config.system.disks.slice();
+-                                        newDisks.push("/");
+-                                        Config.system.disks = newDisks;
++                                    MouseArea {
++                                        id: addDiskArea
++                                        anchors.fill: parent
++                                        hoverEnabled: true
++                                        cursorShape: Qt.PointingHandCursor
++                                        onClicked: {
++                                            let newDisks = Config.system.disks.slice();
++                                            newDisks.push("/");
++                                            Config.system.disks = newDisks;
++                                        }
+                                     }
+diff --git a/modules/widgets/dashboard/metrics/MetricsTab.qml b/modules/widgets/dashboard/metrics/MetricsTab.qml
+index 97b91b37..2d8d5bcb 100644
+--- a/modules/widgets/dashboard/metrics/MetricsTab.qml
++++ b/modules/widgets/dashboard/metrics/MetricsTab.qml
+@@ -24,2 +24,9 @@ Rectangle {
+ 
++    // Dashboard-specific visibility from config
++    readonly property bool showCpu:  Config.system.resources && Config.system.resources.show ? Config.system.resources.show.cpu  !== false : true
++    readonly property bool showRam:  Config.system.resources && Config.system.resources.show ? Config.system.resources.show.ram  !== false : true
++    readonly property bool showGpu:  Config.system.resources && Config.system.resources.show ? Config.system.resources.show.gpu  !== false : true
++    readonly property bool showDisk: Config.system.resources && Config.system.resources.show ? Config.system.resources.show.disk !== false : true
++    readonly property bool showTemp: Config.system.resources && Config.system.resources.show ? Config.system.resources.show.dashTemp !== false : true
++
+     // Adjust history points based on zoom and repaint chart
+@@ -370,2 +377,3 @@ Rectangle {
+                             spacing: 4
++                            visible: root.showCpu
+ 
+@@ -405,3 +413,3 @@ Rectangle {
+                                 Text {
+-                                    visible: SystemResources.cpuTemp >= 0
++                                    visible: root.showTemp && SystemResources.cpuTemp >= 0
+                                     text: Icons.temperature
+@@ -413,3 +421,3 @@ Rectangle {
+                                 Text {
+-                                    visible: SystemResources.cpuTemp >= 0
++                                    visible: root.showTemp && SystemResources.cpuTemp >= 0
+                                     text: `${SystemResources.cpuTemp}°`
+@@ -427,2 +435,3 @@ Rectangle {
+                             spacing: 4
++                            visible: root.showRam
+ 
+@@ -470,3 +479,3 @@ Rectangle {
+                             id: gpuRepeater
+-                            model: SystemResources.gpuDetected ? SystemResources.gpuCount : 0
++                            model: (root.showGpu && SystemResources.gpuDetected) ? SystemResources.gpuCount : 0
+ 
+@@ -537,3 +546,3 @@ Rectangle {
+                                     Text {
+-                                        visible: (SystemResources.gpuTemps[index] ?? -1) >= 0
++                                        visible: root.showTemp && (SystemResources.gpuTemps[index] ?? -1) >= 0
+                                         text: Icons.temperature
+@@ -557,3 +566,3 @@ Rectangle {
+                                     Text {
+-                                        visible: (SystemResources.gpuTemps[index] ?? -1) >= 0
++                                        visible: root.showTemp && (SystemResources.gpuTemps[index] ?? -1) >= 0
+                                         text: `${SystemResources.gpuTemps[index]}°`
+@@ -571,3 +580,3 @@ Rectangle {
+                             id: diskRepeater
+-                            model: SystemResources.validDisks
++                            model: root.showDisk ? SystemResources.validDisks : []
+ 
+@@ -783,9 +792,11 @@ Rectangle {
+                             // Draw CPU line (red)
+-                            drawLine(SystemResources.cpuHistory, Colors.red);
++                            if (root.showCpu)
++                                drawLine(SystemResources.cpuHistory, Colors.red);
+ 
+                             // Draw RAM line (cyan)
+-                            drawLine(SystemResources.ramHistory, Colors.cyan);
++                            if (root.showRam)
++                                drawLine(SystemResources.ramHistory, Colors.cyan);
+ 
+                             // Draw GPU lines (color based on vendor)
+-                            if (SystemResources.gpuDetected && SystemResources.gpuCount > 0) {
++                            if (root.showGpu && SystemResources.gpuDetected && SystemResources.gpuCount > 0) {
+                                 for (let i = 0; i < SystemResources.gpuCount; i++) {

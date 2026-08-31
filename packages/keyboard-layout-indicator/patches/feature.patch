@@ -1,0 +1,474 @@
+diff --git a/config/Config.qml b/config/Config.qml
+index 41436c75..e7a96a25 100644
+--- a/config/Config.qml
++++ b/config/Config.qml
+@@ -548,2 +548,3 @@ Singleton {
+             property bool use12hFormat: false
++            property bool showKeyboardLayout: true
+             property bool containBar: false
+diff --git a/modules/bar/BarContent.qml b/modules/bar/BarContent.qml
+index b9e57ca7..cde4553c 100644
+--- a/modules/bar/BarContent.qml
++++ b/modules/bar/BarContent.qml
+@@ -530,2 +530,16 @@ Item {
+ 
++                        Loader {
++                            active: (Config.bar.showKeyboardLayout ?? true) && KeyboardLayoutService.availableLayouts.length > 1
++                            visible: active
++                            Layout.preferredWidth: active ? 36 : 0
++                            Layout.preferredHeight: active ? 36 : 0
++
++                            sourceComponent: KeyboardLayoutIndicator {
++                                bar: root
++                                layerEnabled: root.shadowsEnabled
++                                startRadius: root.innerRadius
++                                endRadius: root.innerRadius
++                            }
++                        }
++
+                         Bar.BatteryIndicator {
+@@ -737,2 +751,17 @@ Item {
+ 
++                        Loader {
++                            active: (Config.bar.showKeyboardLayout ?? true) && KeyboardLayoutService.availableLayouts.length > 1
++                            visible: active
++                            Layout.preferredWidth: active ? 36 : 0
++                            Layout.preferredHeight: active ? 36 : 0
++                            Layout.alignment: Qt.AlignHCenter
++
++                            sourceComponent: KeyboardLayoutIndicator {
++                                bar: root
++                                layerEnabled: root.shadowsEnabled
++                                startRadius: root.innerRadius
++                                endRadius: root.innerRadius
++                            }
++                        }
++
+                         Bar.BatteryIndicator {
+diff --git a/modules/bar/KeyboardLayoutIndicator.qml b/modules/bar/KeyboardLayoutIndicator.qml
+new file mode 100644
+index 00000000..d110ac02
+--- /dev/null
++++ b/modules/bar/KeyboardLayoutIndicator.qml
+@@ -0,0 +1,174 @@
++pragma ComponentBehavior: Bound
++import QtQuick
++import QtQuick.Layouts
++import qs.modules.services
++import qs.modules.components
++import qs.modules.theme
++import qs.modules.globals
++import qs.config
++
++Item {
++    id: root
++
++    required property var bar
++
++    property bool vertical: bar.orientation === "vertical"
++    property bool isHovered: false
++    property bool layerEnabled: true
++
++    property real radius: 0
++    property real startRadius: radius
++    property real endRadius: radius
++
++    property bool popupOpen: layoutPopup.isOpen
++
++    Layout.preferredWidth: 36
++    Layout.preferredHeight: 36
++    Layout.maximumWidth: 36
++    Layout.maximumHeight: 36
++    Layout.fillWidth: vertical
++    Layout.fillHeight: !vertical
++
++    HoverHandler {
++        onHoveredChanged: root.isHovered = hovered
++    }
++
++    StyledRect {
++        id: buttonBg
++        variant: root.popupOpen ? "primary" : "bg"
++        anchors.fill: parent
++        enableShadow: root.layerEnabled
++
++        topLeftRadius: root.vertical ? root.startRadius : root.startRadius
++        topRightRadius: root.vertical ? root.startRadius : root.endRadius
++        bottomLeftRadius: root.vertical ? root.endRadius : root.startRadius
++        bottomRightRadius: root.vertical ? root.endRadius : root.endRadius
++
++        Rectangle {
++            anchors.fill: parent
++            color: Styling.srItem("overprimary")
++            opacity: root.popupOpen ? 0 : (root.isHovered ? 0.25 : 0)
++            radius: parent.radius ?? 0
++
++            Behavior on opacity {
++                enabled: Config.animDuration > 0
++                NumberAnimation {
++                    duration: Config.animDuration / 2
++                }
++            }
++        }
++
++        Text {
++            anchors.centerIn: parent
++            text: KeyboardLayoutService.displayCode
++            font.family: Styling.defaultFont
++            font.pixelSize: 13
++            font.bold: true
++            color: root.popupOpen ? buttonBg.item : Styling.srItem("overprimary")
++
++            Behavior on color {
++                enabled: Config.animDuration > 0
++                ColorAnimation {
++                    duration: Config.animDuration / 2
++                }
++            }
++        }
++
++        MouseArea {
++            anchors.fill: parent
++            hoverEnabled: false
++            cursorShape: Qt.PointingHandCursor
++            acceptedButtons: Qt.LeftButton | Qt.RightButton
++            onClicked: (mouse) => {
++                if (mouse.button === Qt.RightButton) {
++                    layoutPopup.toggle();
++                } else {
++                    KeyboardLayoutService.switchLayout();
++                }
++            }
++        }
++
++        StyledToolTip {
++            visible: root.isHovered && !root.popupOpen
++            tooltipText: KeyboardLayoutService.currentKeymap || ("Layout: " + KeyboardLayoutService.displayCode)
++        }
++    }
++
++    BarPopup {
++        id: layoutPopup
++        anchorItem: buttonBg
++        bar: root.bar
++
++        contentWidth: layoutRow.implicitWidth + popupPadding * 2
++        contentHeight: 36 + popupPadding * 2
++
++        Row {
++            id: layoutRow
++            anchors.centerIn: parent
++            spacing: 4
++
++            Repeater {
++                model: KeyboardLayoutService.availableLayouts
++
++                delegate: StyledRect {
++                    id: layoutButton
++                    required property string modelData
++                    required property int index
++
++                    readonly property bool isSelected: KeyboardLayoutService.currentIndex === index
++                    readonly property bool isFirst: index === 0
++                    readonly property bool isLast: index === KeyboardLayoutService.availableLayouts.length - 1
++                    property bool buttonHovered: false
++
++                    readonly property real defaultRadius: Styling.radius(0)
++                    readonly property real selectedRadius: Styling.radius(0) / 2
++
++                    variant: isSelected ? "primary" : (buttonHovered ? "focus" : "common")
++                    enableShadow: false
++                    width: layoutLabel.implicitWidth + 48
++                    height: 36
++
++                    topLeftRadius: isSelected ? (isFirst ? defaultRadius : selectedRadius) : defaultRadius
++                    bottomLeftRadius: isSelected ? (isFirst ? defaultRadius : selectedRadius) : defaultRadius
++                    topRightRadius: isSelected ? (isLast ? defaultRadius : selectedRadius) : defaultRadius
++                    bottomRightRadius: isSelected ? (isLast ? defaultRadius : selectedRadius) : defaultRadius
++
++                    RowLayout {
++                        anchors.centerIn: parent
++                        spacing: 8
++
++                        Text {
++                            text: Icons.globe
++                            font.family: Icons.font
++                            font.pixelSize: 14
++                            color: layoutButton.item
++                        }
++
++                        Text {
++                            id: layoutLabel
++                            text: KeyboardLayoutService.getDisplayName(layoutButton.modelData)
++                            font.family: Styling.defaultFont
++                            font.pixelSize: Styling.fontSize(0)
++                            font.bold: true
++                            color: layoutButton.item
++                        }
++                    }
++
++                    MouseArea {
++                        anchors.fill: parent
++                        hoverEnabled: true
++                        cursorShape: Qt.PointingHandCursor
++
++                        onEntered: layoutButton.buttonHovered = true
++                        onExited: layoutButton.buttonHovered = false
++
++                        onClicked: {
++                            KeyboardLayoutService.setLayout(layoutButton.index);
++                            layoutPopup.close();
++                        }
++                    }
++                }
++            }
++        }
++    }
++}
+diff --git a/modules/services/KeyboardLayoutService.qml b/modules/services/KeyboardLayoutService.qml
+new file mode 100644
+index 00000000..84d4d524
+--- /dev/null
++++ b/modules/services/KeyboardLayoutService.qml
+@@ -0,0 +1,215 @@
++pragma Singleton
++
++import QtQuick
++import Quickshell
++import Quickshell.Hyprland
++import Quickshell.Io
++
++Singleton {
++    id: root
++
++    // Current active layout short name (e.g. "us", "ru")
++    property string currentLayout: ""
++    // Current active keymap display name (e.g. "English (US)", "Russian")
++    property string currentKeymap: ""
++    // Available layouts parsed from hyprctl
++    property var availableLayouts: []
++    // Current layout index
++    property int currentIndex: 0
++    // Main keyboard name
++    property string mainKeyboard: ""
++
++    // Dynamic map of layout code → display name, built as layouts are activated
++    property var keymapNames: ({})
++    property int initAttempts: 0
++
++    // Short display code for the bar button
++    readonly property string displayCode: {
++        if (!currentLayout) return "??";
++        return currentLayout.toUpperCase().substring(0, 2);
++    }
++
++    function switchLayout() {
++        if (!mainKeyboard) return;
++        switchProcess.command = ["hyprctl", "switchxkblayout", mainKeyboard, "next"];
++        switchProcess.running = true;
++    }
++
++    function setLayout(index) {
++        if (!mainKeyboard) return;
++        switchProcess.command = ["hyprctl", "switchxkblayout", mainKeyboard, String(index)];
++        switchProcess.running = true;
++    }
++
++    function getDisplayName(code) {
++        if (root.keymapNames[code])
++            return root.keymapNames[code];
++        return code.toUpperCase();
++    }
++
++    // Parse devices JSON and apply state
++    function applyDevicesState(jsonStr) {
++        try {
++            const devices = JSON.parse(jsonStr);
++            const keyboards = devices.keyboards || [];
++
++            let kb = null;
++            if (root.mainKeyboard)
++                kb = keyboards.find(k => k.name === root.mainKeyboard);
++            if (!kb) kb = keyboards.find(k => k.main === true);
++            if (!kb) kb = keyboards.find(k => k.layout && k.layout.length > 0);
++            if (!kb) return;
++
++            root.mainKeyboard = kb.name;
++            root.availableLayouts = kb.layout.split(",").map(l => l.trim());
++            root.currentIndex = kb.active_layout_index || 0;
++            root.currentLayout = root.availableLayouts[root.currentIndex] || "";
++            root.currentKeymap = kb.active_keymap || "";
++
++            // Override with Hyprland's active keymap name (more accurate)
++            if (root.currentLayout && root.currentKeymap && root.keymapNames[root.currentLayout] !== root.currentKeymap) {
++                let updated = Object.assign({}, root.keymapNames);
++                updated[root.currentLayout] = root.currentKeymap;
++                root.keymapNames = updated;
++            }
++        } catch (e) {
++            console.error("KeyboardLayoutService: parse error:", e);
++        }
++    }
++
++    // Load XKB layout display names from system database
++    Process {
++        id: xkbNamesProcess
++        command: ["sh", "-c", "awk '/^! layout$/,/^! /{if(/^  [a-z]/ && !/^! /)print}' /usr/share/X11/xkb/rules/evdev.lst"]
++        running: true
++        property string buffer: ""
++
++        stdout: SplitParser {
++            splitMarker: ""
++            onRead: (data) => {
++                xkbNamesProcess.buffer += data;
++            }
++        }
++
++        onExited: (code) => {
++            if (code === 0) {
++                let names = {};
++                const lines = xkbNamesProcess.buffer.split("\n");
++                for (let i = 0; i < lines.length; i++) {
++                    const match = lines[i].match(/^\s+(\S+)\s+(.+)$/);
++                    if (match && !names[match[1]]) {
++                        names[match[1]] = match[2].trim();
++                    }
++                }
++                root.keymapNames = names;
++            }
++        }
++    }
++
++    // Fetch initial state
++    Process {
++        id: initProcess
++        command: ["hyprctl", "devices", "-j"]
++        running: true
++        property string buffer: ""
++
++        stdout: SplitParser {
++            splitMarker: ""
++            onRead: (data) => {
++                initProcess.buffer += data;
++            }
++        }
++
++        onExited: (code) => {
++            if (code === 0 && initProcess.buffer !== "") {
++                root.applyDevicesState(initProcess.buffer);
++                root.initAttempts = 0;
++            } else if (root.initAttempts < 15) {
++                // Hyprland IPC is not up yet. Back off and retry rather than
++                // leaving the indicator stuck for the rest of the session.
++                root.initAttempts++;
++                initRetry.restart();
++            }
++        }
++    }
++
++    Timer {
++        id: initRetry
++        interval: Math.min(1000 * root.initAttempts, 10000)
++        onTriggered: {
++            initProcess.buffer = "";
++            initProcess.running = true;
++        }
++    }
++
++    // Quickshell owns the Hyprland event socket: it resolves the path, connects
++    // and reconnects. The previous implementation used an external socket
++    // client against a path built once from HYPRLAND_INSTANCE_SIGNATURE. When
++    // quickshell started before Hyprland exported that variable, the malformed
++    // path was retried forever.
++    Connections {
++        target: Hyprland
++
++        function onRawEvent(event) {
++            if (event.name !== "activelayout")
++                return;
++
++            // data is "keyboard_name,layout_name"
++            const commaIdx = event.data.lastIndexOf(",");
++            if (commaIdx === -1)
++                return;
++
++            root.currentKeymap = event.data.substring(commaIdx + 1).trim();
++
++            // Re-query devices for the authoritative active index.
++            refreshProcess.buffer = "";
++            refreshProcess.running = true;
++        }
++    }
++
++    // Refresh process to update state after layout switch
++    Process {
++        id: refreshProcess
++        command: ["hyprctl", "devices", "-j"]
++        property string buffer: ""
++
++        stdout: SplitParser {
++            splitMarker: ""
++            onRead: (data) => {
++                refreshProcess.buffer += data;
++            }
++        }
++
++        onStarted: {
++            refreshProcess.buffer = "";
++        }
++
++        onExited: (code) => {
++            if (code === 0) root.applyDevicesState(refreshProcess.buffer);
++        }
++    }
++
++    // Poll for XKB-level layout changes (grp:alt_shift_toggle doesn't emit socket events)
++    Timer {
++        id: pollTimer
++        interval: 500
++        running: true
++        repeat: true
++        onTriggered: {
++            if (!refreshProcess.running) {
++                refreshProcess.buffer = "";
++                refreshProcess.running = true;
++            }
++        }
++    }
++
++    // Switch process
++    Process {
++        id: switchProcess
++        // Layout update comes via socket event + poll
++    }
++
++    Component.onDestruction: {
++        pollTimer.running = false;
++    }
++}
+diff --git a/modules/widgets/dashboard/controls/SettingsIndex.qml b/modules/widgets/dashboard/controls/SettingsIndex.qml
+index 6a606409..48a066e6 100644
+--- a/modules/widgets/dashboard/controls/SettingsIndex.qml
++++ b/modules/widgets/dashboard/controls/SettingsIndex.qml
+@@ -158,2 +158,3 @@ QtObject {
+         { label: "Firefox Player", keywords: "browser media music", section: 8, subSection: "bar", subLabel: "Ambxst > Bar", icon: Icons.layout, isIcon: true },
++        { label: "Keyboard Layout", keywords: "language input switch layout keyboard locale xkb", section: 8, subSection: "bar", subLabel: "Ambxst > Bar", icon: Icons.globe, isIcon: true },
+         { label: "Bar Auto-hide", keywords: "autohide hide show reveal", section: 8, subSection: "bar", subLabel: "Ambxst > Bar", icon: Icons.layout, isIcon: true },
+diff --git a/modules/widgets/dashboard/controls/ShellPanel.qml b/modules/widgets/dashboard/controls/ShellPanel.qml
+index d02bf8cf..f06d0adf 100644
+--- a/modules/widgets/dashboard/controls/ShellPanel.qml
++++ b/modules/widgets/dashboard/controls/ShellPanel.qml
+@@ -813,2 +813,13 @@ Item {
+ 
++                        ToggleRow {
++                            label: "Show Keyboard Layout"
++                            checked: Config.bar.showKeyboardLayout ?? true
++                            onToggled: value => {
++                                if (value !== Config.bar.showKeyboardLayout) {
++                                    GlobalStates.markShellChanged();
++                                    Config.bar.showKeyboardLayout = value;
++                                }
++                            }
++                        }
++
+                         Separator {
