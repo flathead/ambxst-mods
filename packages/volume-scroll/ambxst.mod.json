@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "id": "community.volume-scroll",
   "name": "Volume scroll controls",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Changes the default sink volume when the pointer wheel is used over audio controls or a player.",
   "license": "AGPL-3.0-only",
   "author": "flathead",
@@ -11,9 +11,9 @@
   "homepage": "https://github.com/flathead/ambxst-mods/tree/main/packages/volume-scroll",
   "compatibility": {
     "api": 1,
-    "ambxst": ">=1.2.5 <1.3.0",
+    "ambxst": ">=1.3.8 <1.4.0",
     "testedBaseCommits": [
-      "287573bf9e5f3ed4ac40f5ead8b5879b595c5577"
+      "c62a7acc443dbb1c9045e83466402528cc522af2"
     ]
   },
   "permissions": [

@@ -1,5 +1,5 @@
 diff --git a/config/Config.qml b/config/Config.qml
-index f20b12ef..af03982d 100644
+index ab5ce35c..2580b2ca 100644
 --- a/config/Config.qml
 +++ b/config/Config.qml
 @@ -546,6 +546,8 @@ Singleton {
@@ -508,10 +508,10 @@ index 00000000..69853da7
 +    }
 +}
 diff --git a/modules/bar/BarContent.qml b/modules/bar/BarContent.qml
-index c3a0f591..d9bc5e15 100644
+index 9d43848a..b57321d7 100644
 --- a/modules/bar/BarContent.qml
 +++ b/modules/bar/BarContent.qml
-@@ -528,6 +528,20 @@ Item {
+@@ -542,6 +542,20 @@ Item {
                              endRadius: root.innerRadius
                          }
  
@@ -532,7 +532,7 @@ index c3a0f591..d9bc5e15 100644
                          Bar.BatteryIndicator {
                              id: batteryIndicator
                              bar: root
-@@ -735,6 +749,21 @@ Item {
+@@ -749,6 +763,21 @@ Item {
                              endRadius: root.innerRadius
                          }
  
@@ -555,7 +555,7 @@ index c3a0f591..d9bc5e15 100644
                              id: batteryIndicatorVert
                              bar: root
 diff --git a/modules/widgets/dashboard/controls/SettingsIndex.qml b/modules/widgets/dashboard/controls/SettingsIndex.qml
-index 8b5315bc..b32e3f66 100644
+index 0ef76170..3d8a8cd3 100644
 --- a/modules/widgets/dashboard/controls/SettingsIndex.qml
 +++ b/modules/widgets/dashboard/controls/SettingsIndex.qml
 @@ -163,6 +163,8 @@ QtObject {
@@ -568,10 +568,10 @@ index 8b5315bc..b32e3f66 100644
          { label: I18n.t("settings.shell.pinned_on_startup"), keywords: "show visible default", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
          { label: I18n.t("settings.shell.hover_to_reveal"), keywords: "mouse show hide edge", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
 diff --git a/modules/widgets/dashboard/controls/ShellPanel.qml b/modules/widgets/dashboard/controls/ShellPanel.qml
-index b9586b66..26af2786 100644
+index 9723b55d..7e775281 100644
 --- a/modules/widgets/dashboard/controls/ShellPanel.qml
 +++ b/modules/widgets/dashboard/controls/ShellPanel.qml
-@@ -812,6 +812,108 @@ Item {
+@@ -816,6 +816,108 @@ Item {
                              }
                          }
  

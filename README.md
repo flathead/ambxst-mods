@@ -23,10 +23,9 @@ ambxst reload
 ```
 
 New packages are installed disabled. Review the manifest, permissions, and patch
-before enabling one. UI packages require `community.i18n`, which lives in its own
-repository at [flathead/ambxst-mod-i18n](https://github.com/flathead/ambxst-mod-i18n);
-the details pane marks it as missing, disabled, or ready. **Install required mods** downloads and enables
-the dependency after confirmation. It does not enable the selected package.
+before enabling one. Ambxst 1.3.0 and newer include runtime translations, so
+these packages use the localization service provided by the base project. The
+old `community.i18n` package must be removed before enabling current releases.
 
 Use **Sort: Load order** to drag packages into the order in which their patches
 should be composed. Dependencies always load before the packages that require
@@ -39,17 +38,13 @@ responsibility of the distribution or user environment.
 
 ## Move a package into Ambxst core
 
-Each package has one `patches/feature.patch`, generated against an Ambxst tree
-that already carries the mod manager, because that is the only tree a mod can be
-installed on. Packages that declare `community.i18n` are generated on top of that
-dependency as well, so apply the i18n patch first. The manager merges patches
-three-way when composing, so this exact order only matters when you apply them
-by hand. Then inspect the resulting source and run the project checks:
+Each package has one `patches/feature.patch`, generated against the tested
+Ambxst revision recorded in its manifest. The manager merges patches three-way
+when composing. Load order only matters when two packages add code at the same
+location. Inspect the resulting source and run the project checks:
 
 ```bash
 git switch -c feature/example origin/dev
-git apply --check --whitespace=error-all ../ambxst-mod-i18n/patches/feature.patch
-git apply ../ambxst-mod-i18n/patches/feature.patch
 git apply --check --whitespace=error-all packages/example/patches/feature.patch
 git apply packages/example/patches/feature.patch
 go test ./...

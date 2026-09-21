@@ -1,5 +1,5 @@
 diff --git a/config/Config.qml b/config/Config.qml
-index f20b12ef..2fa4e45f 100644
+index ab5ce35c..8d384444 100644
 --- a/config/Config.qml
 +++ b/config/Config.qml
 @@ -22,6 +22,7 @@ import "defaults/system.js" as SystemDefaults
@@ -30,7 +30,7 @@ index f20b12ef..2fa4e45f 100644
              "echo 'Preset files copied if missing'"
          ]
      }
-@@ -1230,6 +1233,57 @@ Singleton {
+@@ -1236,6 +1239,57 @@ Singleton {
          }
      }
  
@@ -88,7 +88,25 @@ index f20b12ef..2fa4e45f 100644
      // Keybinds (binds.json)
      // Timer to repair keybinds after initial load
      Timer {
-@@ -3512,6 +3566,9 @@ Singleton {
+@@ -1281,7 +1335,7 @@ Singleton {
+             if (current.ambxst.dashboard && typeof current.ambxst.dashboard === "object" && !current.ambxst.dashboard.modifiers) {
+                 console.log("Migrating nested ambxst binds to flat structure...");
+                 const nested = current.ambxst.dashboard;
+-                
++
+                 // Map old names to new names and update arguments
+                 if (nested.widgets) {
+                     current.ambxst.launcher = nested.widgets;
+@@ -3491,7 +3545,7 @@ Singleton {
+                 // Trigger save
+                 GlobalStates.markShellChanged();
+             }
+-        } 
++        }
+         // If notch moves top
+         else if (notchPosition === "top") {
+             // Restore Dock if displaced
+@@ -3542,6 +3596,9 @@ Singleton {
      // General configuration
      property QtObject general: generalLoader.adapter
  
@@ -98,7 +116,7 @@ index f20b12ef..2fa4e45f 100644
      // Module save functions
      function saveBar() {
          barLoader.writeAdapter();
-@@ -3558,6 +3615,9 @@ Singleton {
+@@ -3588,6 +3645,9 @@ Singleton {
      function saveGeneral() {
          generalLoader.writeAdapter();
      }
@@ -108,6 +126,32 @@ index f20b12ef..2fa4e45f 100644
  
      // Color helpers
      function isHexColor(colorValue) {
+@@ -3599,20 +3659,20 @@ Singleton {
+ 
+     function resolveColor(colorValue) {
+         if (!colorValue) return "transparent"; // Fallback
+-        
++
+         if (isHexColor(colorValue)) {
+             return colorValue;
+         }
+-        
++
+         // Check Colors singleton
+         if (typeof Colors === 'undefined' || !Colors) return "transparent";
+-        
+-        return Colors[colorValue] || "transparent"; 
++
++        return Colors[colorValue] || "transparent";
+     }
+ 
+     function resolveColorWithOpacity(colorValue, opacity) {
+         if (!colorValue) return Qt.rgba(0,0,0,0);
+-        
++
+         const color = isHexColor(colorValue) ? Qt.color(colorValue) : (Colors[colorValue] || Qt.color("transparent"));
+         return Qt.rgba(color.r, color.g, color.b, opacity);
+     }
 diff --git a/config/defaults/calendar.js b/config/defaults/calendar.js
 new file mode 100644
 index 00000000..c226de17
@@ -541,10 +585,62 @@ index 00000000..0c695325
 +    }
 +}
 diff --git a/modules/bar/BarContent.qml b/modules/bar/BarContent.qml
-index c3a0f591..acab4437 100644
+index 9d43848a..42d1f0de 100644
 --- a/modules/bar/BarContent.qml
 +++ b/modules/bar/BarContent.qml
-@@ -536,6 +536,19 @@ Item {
+@@ -87,7 +87,7 @@ Item {
+     readonly property bool notchHoverActive: {
+         if (barPosition !== notchPosition)
+             return false;
+-        
++
+         if (notchPanelRef) {
+             // UnifiedShellPanel exposes 'notchHoverActive' property alias pointing to notchContent.hoverActive
+             // We need to check if that property exists on the panel object
+@@ -168,7 +168,7 @@ Item {
+                 return "end";
+             return "center";
+         }
+-        
++
+         // Vertical always falls back to center logic inside the column but we treat it as appended to group
+         return "center";
+     }
+@@ -188,16 +188,16 @@ Item {
+ 
+     readonly property int contentImplicitWidth: orientation === "horizontal" ? (horizontalLoader.item && horizontalLoader.item.implicitWidth !== undefined ? horizontalLoader.item.implicitWidth : 0) : (verticalLoader.item && verticalLoader.item.implicitWidth !== undefined ? verticalLoader.item.implicitWidth : 0)
+     readonly property int contentImplicitHeight: orientation === "horizontal" ? (horizontalLoader.item && horizontalLoader.item.implicitHeight !== undefined ? horizontalLoader.item.implicitHeight : 0) : (verticalLoader.item && verticalLoader.item.implicitHeight !== undefined ? verticalLoader.item.implicitHeight : 0)
+-    
++
+     readonly property int barTargetWidth: orientation === "vertical" ? (contentImplicitWidth + 2 * barPadding) : 0
+     readonly property int barTargetHeight: orientation === "horizontal" ? (contentImplicitHeight + 2 * barPadding) : 0
+ 
+     readonly property bool actualContainBar: (Config.bar && Config.bar.containBar !== undefined ? Config.bar.containBar : false) && (Config.bar && Config.bar.frameEnabled !== undefined ? Config.bar.frameEnabled : false)
+-    readonly property int totalBarWidth: barTargetWidth + 
++    readonly property int totalBarWidth: barTargetWidth +
+         ((root.barPosition === "left" || root.orientation === "horizontal") ? (root.frameOffset + root.leftOuterMargin) : 0) +
+         ((root.barPosition === "right" || root.orientation === "horizontal") ? (root.frameOffset + root.rightOuterMargin) : 0)
+ 
+-    readonly property int totalBarHeight: barTargetHeight + 
++    readonly property int totalBarHeight: barTargetHeight +
+         ((root.barPosition === "top" || root.orientation === "vertical") ? (root.frameOffset + root.topOuterMargin) : 0) +
+         ((root.barPosition === "bottom" || root.orientation === "vertical") ? (root.frameOffset + root.bottomOuterMargin) : 0)
+ 
+@@ -415,11 +415,11 @@ Item {
+                                     id: pinButtonBg
+                                     variant: root.pinned ? "primary" : "bg"
+                                     enableShadow: root.shadowsEnabled
+-                                    
++
+                                     // PinButton is typically last in group 1 (unless IntegratedDock follows at start)
+                                     property real startRadius: root.innerRadius
+                                     property real endRadius: root.dockAtStart ? root.innerRadius : root.outerRadius
+-                                    
++
+                                     topLeftRadius: startRadius
+                                     bottomLeftRadius: startRadius
+                                     topRightRadius: endRadius
+@@ -550,6 +550,19 @@ Item {
                              endRadius: root.innerRadius
                          }
  
@@ -564,7 +660,42 @@ index c3a0f591..acab4437 100644
                          Clock {
                              id: clockComponent
                              bar: root
-@@ -743,6 +756,20 @@ Item {
+@@ -659,21 +672,21 @@ Item {
+                                     active: (Config.bar && Config.bar.showPinButton !== undefined ? Config.bar.showPinButton : true)
+                                     visible: active
+                                     Layout.alignment: Qt.AlignHCenter
+-                            
++
+                                     sourceComponent: Button {
+                                         id: pinButtonV
+                                         implicitWidth: 36
+                                         implicitHeight: 36
+-                            
++
+                                         background: StyledRect {
+                                             id: pinButtonVBg
+                                             variant: root.pinned ? "primary" : "bg"
+                                             enableShadow: root.shadowsEnabled
+-                                        
++
+                                             property real startRadius: root.innerRadius
+                                             // In vertical, dock is always appended to this group if enabled
+                                             property real endRadius: root.integratedDockEnabled ? root.innerRadius : root.outerRadius
+-                                        
++
+                                             topLeftRadius: startRadius
+                                             topRightRadius: startRadius
+                                             bottomLeftRadius: endRadius
+@@ -735,7 +748,7 @@ Item {
+                                 Layout.fillHeight: true
+                                 Layout.fillWidth: true
+                                 enableShadow: root.shadowsEnabled
+-                                
++
+                                 startRadius: root.innerRadius
+                                 endRadius: root.outerRadius
+                             }
+@@ -757,6 +770,20 @@ Item {
                              endRadius: root.innerRadius
                          }
  
@@ -917,7 +1048,7 @@ index 00000000..33c11d6f
 +
 +}
 diff --git a/modules/theme/Icons.qml b/modules/theme/Icons.qml
-index 9a266b2e..846c203d 100644
+index 3333506c..5dbbabf9 100644
 --- a/modules/theme/Icons.qml
 +++ b/modules/theme/Icons.qml
 @@ -125,6 +125,8 @@ QtObject {
@@ -2215,9 +2346,36 @@ index 00000000..0e396997
 +    }
 +}
 diff --git a/modules/widgets/dashboard/controls/SettingsIndex.qml b/modules/widgets/dashboard/controls/SettingsIndex.qml
-index 8b5315bc..58714781 100644
+index 0ef76170..e55ce021 100644
 --- a/modules/widgets/dashboard/controls/SettingsIndex.qml
 +++ b/modules/widgets/dashboard/controls/SettingsIndex.qml
+@@ -13,7 +13,7 @@ QtObject {
+ 
+     // Main Sections:
+     // 0: Network, 1: Bluetooth, 2: Mixer, 3: AI, 4: Effects, 5: Theme, 6: Binds, 7: System, 8: Compositor, 9: Ambxst, 10: Mods
+-    
++
+     property var dynamicItems: []
+ 
+     readonly property var staticItems: [
+@@ -86,7 +86,7 @@ QtObject {
+         { label: I18n.t("settings.binds.lens"), keywords: "magnifier zoom shortcut", section: 5, subSection: "", subLabel: I18n.t("settings.binds") + " > " + I18n.t("settings.ambxst"), icon: Icons.magnifyingGlass, isIcon: true },
+         { label: I18n.t("settings.binds.reload"), keywords: "refresh restart shortcut", section: 5, subSection: "", subLabel: I18n.t("settings.binds") + " > " + I18n.t("settings.ambxst"), icon: Icons.arrowCounterClockwise, isIcon: true },
+         { label: I18n.t("settings.binds.quit"), keywords: "exit close shortcut", section: 5, subSection: "", subLabel: I18n.t("settings.binds") + " > " + I18n.t("settings.ambxst"), icon: Icons.signOut, isIcon: true },
+-        
++
+         // --- System ---
+         { label: I18n.t("settings.system"), keywords: "hardware info resources cpu ram", section: 6, subSection: "", subLabel: I18n.t("settings.system"), icon: Icons.circuitry, isIcon: true },
+ 
+@@ -117,7 +117,7 @@ QtObject {
+         { label: I18n.t("settings.system.before_sleep"), keywords: "loginctl lock-session idle", section: 6, subSection: "idle", subLabel: I18n.t("settings.system") + " > " + I18n.t("settings.system.idle"), icon: Icons.moon, isIcon: true },
+         { label: I18n.t("settings.system.after_sleep"), keywords: "screen on resume idle", section: 6, subSection: "idle", subLabel: I18n.t("settings.system") + " > " + I18n.t("settings.system.idle"), icon: Icons.moon, isIcon: true },
+         { label: I18n.t("settings.system.idle_listener"), keywords: "timeout brightness screen off suspend", section: 6, subSection: "idle", subLabel: I18n.t("settings.system") + " > " + I18n.t("settings.system.idle"), icon: Icons.moon, isIcon: true },
+-        
++
+         // --- Compositor ---
+         { label: I18n.t("settings.compositor"), keywords: "compositor window manager wm", section: 7, subSection: "", subLabel: I18n.t("settings.compositor"), icon: Icons.compositor, isIcon: true },
+ 
 @@ -214,7 +214,13 @@ QtObject {
          { label: I18n.t("settings.shell.desktop_text_color"), keywords: "label font", section: 8, subSection: "desktop", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.desktop"), icon: Icons.palette, isIcon: true },
  
@@ -2233,23 +2391,41 @@ index 8b5315bc..58714781 100644
      ]
  
      property var items: staticItems.concat(dynamicItems)
+@@ -223,7 +229,7 @@ QtObject {
+         // Simple deduplication based on label + section
+         let currentLabels = new Set(items.map(i => i.section + ":" + i.label));
+         let uniqueNew = [];
+-        
++
+         for (let i = 0; i < newItems.length; i++) {
+             let item = newItems[i];
+             let key = item.section + ":" + item.label;
+@@ -232,7 +238,7 @@ QtObject {
+                 currentLabels.add(key);
+             }
+         }
+-        
++
+         if (uniqueNew.length > 0) {
+             dynamicItems = dynamicItems.concat(uniqueNew);
+         }
 diff --git a/modules/widgets/dashboard/controls/SettingsTab.qml b/modules/widgets/dashboard/controls/SettingsTab.qml
-index 91866bd2..b76f6aae 100644
+index aaef9eca..f49f56c8 100644
 --- a/modules/widgets/dashboard/controls/SettingsTab.qml
 +++ b/modules/widgets/dashboard/controls/SettingsTab.qml
-@@ -266,6 +266,12 @@ Rectangle {
-             label: "Mods",
+@@ -261,6 +261,12 @@ Rectangle {
              section: 10,
              isIcon: true
-+        },
+         },
 +        {
 +            icon: Icons.calendarBlank,
 +            label: I18n.t("settings.calendar"),
 +            section: 11,
 +            isIcon: true
-         }
-     ]
- 
++        },
+         {
+             icon: Qt.resolvedUrl("../../../../assets/ambxst/ambxst-icon.svg"),
+             label: I18n.t("settings.ambxst"),
 @@ -606,6 +612,10 @@ Rectangle {
                  {
                      component: "ModsPanel.qml",

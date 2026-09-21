@@ -1,9 +1,9 @@
 diff --git a/config/Config.qml b/config/Config.qml
-index f20b12ef..a2bd65a7 100644
+index ab5ce35c..206e2853 100644
 --- a/config/Config.qml
 +++ b/config/Config.qml
-@@ -1051,6 +1051,23 @@ Singleton {
-                 property bool syncSpotify: false
+@@ -1057,6 +1057,23 @@ Singleton {
+                 property bool tmpfs: false
              }
              property string language: "auto"
 +            property JsonObject resources: JsonObject {
@@ -27,13 +27,13 @@ index f20b12ef..a2bd65a7 100644
      }
  
 diff --git a/config/defaults/system.js b/config/defaults/system.js
-index 79c2e77c..4ff68c6e 100644
+index b7b2b2a7..90ba9844 100644
 --- a/config/defaults/system.js
 +++ b/config/defaults/system.js
-@@ -45,5 +45,22 @@ var data = {
-         "restTime": 300,
-         "autoStart": false,
-         "syncSpotify": false
+@@ -48,5 +48,22 @@ var data = {
+     },
+     "clipboard": {
+         "tmpfs": false
 +    },
 +    "resources": {
 +        "enabled": true,
@@ -54,10 +54,10 @@ index 79c2e77c..4ff68c6e 100644
      }
  }
 diff --git a/modules/bar/BarContent.qml b/modules/bar/BarContent.qml
-index c3a0f591..f53e462e 100644
+index 9d43848a..78a2bc9c 100644
 --- a/modules/bar/BarContent.qml
 +++ b/modules/bar/BarContent.qml
-@@ -193,6 +193,12 @@ Item {
+@@ -207,6 +207,12 @@ Item {
      // Shadow logic for bar components
      readonly property bool shadowsEnabled: Config.showBackground && (!actualContainBar || (Config.bar && Config.bar.keepBarShadow !== undefined ? Config.bar.keepBarShadow : false))
  
@@ -70,7 +70,7 @@ index c3a0f591..f53e462e 100644
      // The hitbox for the mask
      property alias barHitbox: barMouseArea
  
-@@ -459,6 +465,19 @@ Item {
+@@ -473,6 +479,19 @@ Item {
                              }
                          }
  
@@ -90,7 +90,7 @@ index c3a0f591..f53e462e 100644
                          Item {
                              Layout.fillWidth: true
                              Layout.fillHeight: true
-@@ -499,6 +518,19 @@ Item {
+@@ -513,6 +532,19 @@ Item {
                              visible: !(root.orientation === "horizontal" && integratedDockEnabled)
                          }
  
@@ -110,7 +110,7 @@ index c3a0f591..f53e462e 100644
                          PresetsButton {
                              id: presetsButton
                              startRadius: root.dockAtEnd ? root.innerRadius : root.outerRadius
-@@ -592,6 +624,19 @@ Item {
+@@ -606,6 +638,19 @@ Item {
                              enableShadow: root.shadowsEnabled
                          }
  
@@ -130,7 +130,7 @@ index c3a0f591..f53e462e 100644
                          // Center Group Container
                          Item {
                              Layout.fillHeight: true
-@@ -727,6 +772,19 @@ Item {
+@@ -741,6 +786,19 @@ Item {
                              }
                          }
  
@@ -929,10 +929,10 @@ index 6b60935c..6c1e633f 100644
                      z: visible ? 1 : 0
                  }
 diff --git a/modules/widgets/dashboard/controls/SystemPanel.qml b/modules/widgets/dashboard/controls/SystemPanel.qml
-index 288be77b..7c298ece 100644
+index dc1cc0ba..e99170dd 100644
 --- a/modules/widgets/dashboard/controls/SystemPanel.qml
 +++ b/modules/widgets/dashboard/controls/SystemPanel.qml
-@@ -18,6 +18,16 @@ Item {
+@@ -19,6 +19,16 @@ Item {
  
      property string currentSection: ""
  
@@ -949,7 +949,7 @@ index 288be77b..7c298ece 100644
      component SectionButton: StyledRect {
          id: sectionBtn
          required property string text
-@@ -62,6 +72,53 @@ Item {
+@@ -63,6 +73,53 @@ Item {
          }
      }
  
@@ -1003,7 +1003,7 @@ index 288be77b..7c298ece 100644
      // Main content
      Flickable {
          id: mainFlickable
-@@ -85,21 +142,34 @@ Item {
+@@ -86,21 +143,34 @@ Item {
                      width: root.contentWidth
                      anchors.horizontalCenter: parent.horizontalCenter
                      title: root.currentSection === "" ? I18n.t("settings.system") : (root.currentSection === "system" ? I18n.t("settings.system.resources") : I18n.t("settings.system." + root.currentSection))
@@ -1049,7 +1049,7 @@ index 288be77b..7c298ece 100644
                      }
                  }
              }
-@@ -148,7 +218,7 @@ Item {
+@@ -149,7 +219,7 @@ Item {
                              sectionId: "idle"
                          }
                          SectionButton {
@@ -1057,8 +1057,8 @@ index 288be77b..7c298ece 100644
 +                            text: I18n.t("system.terminal.title")
                              sectionId: "terminal"
                          }
-                     }
-@@ -539,157 +609,535 @@ Item {
+                         SectionButton {
+@@ -544,157 +614,535 @@ Item {
                      // SYSTEM SECTION
                      // =====================
                      ColumnLayout {
@@ -1707,7 +1707,7 @@ index 288be77b..7c298ece 100644
                                      }
                                  }
                              }
-@@ -909,7 +1357,7 @@ Item {
+@@ -914,7 +1362,7 @@ Item {
                          spacing: 8
  
                          Text {
@@ -1716,7 +1716,7 @@ index 288be77b..7c298ece 100644
                              font.family: Config.theme.font
                              font.pixelSize: Styling.fontSize(-1)
                              font.weight: Font.Medium
-@@ -918,7 +1366,7 @@ Item {
+@@ -923,7 +1371,7 @@ Item {
                          }
  
                          Text {
@@ -1725,7 +1725,7 @@ index 288be77b..7c298ece 100644
                              font.family: Config.theme.font
                              font.pixelSize: Styling.fontSize(-2)
                              color: Colors.overSurfaceVariant
-@@ -928,7 +1376,7 @@ Item {
+@@ -933,7 +1381,7 @@ Item {
                          }
  
                          TextInputRow {
@@ -1734,7 +1734,7 @@ index 288be77b..7c298ece 100644
                              variant: "bg"
                              value: Config.general.terminal ?? "kitty"
                              placeholder: "foot, kitty, ghostty, alacritty, wezterm…"
-@@ -953,8 +1401,8 @@ Item {
+@@ -958,8 +1406,8 @@ Item {
                                  spacing: 8
  
                                  ToggleRow {
@@ -1745,7 +1745,7 @@ index 288be77b..7c298ece 100644
                                      checked: Config.general.terminalAdvanced ?? false
                                      onToggled: checked => {
                                          if (checked !== Config.general.terminalAdvanced) {
-@@ -979,7 +1427,7 @@ Item {
+@@ -984,7 +1432,7 @@ Item {
                                      }
  
                                      TextInputRow {
@@ -1754,7 +1754,7 @@ index 288be77b..7c298ece 100644
                                          variant: "bg"
                                          value: Config.general.terminalCommand ?? "$TERMINAL -e $COMMAND"
                                          placeholder: "$TERMINAL -e $COMMAND"
-@@ -991,7 +1439,7 @@ Item {
+@@ -996,7 +1444,7 @@ Item {
                                      }
  
                                      Text {
