@@ -1,0 +1,36 @@
+diff --git a/translations/en.json b/translations/en.json
+--- a/translations/en.json
++++ b/translations/en.json
+@@ -123,7 +123,8 @@
+   "ai.run_command": "Run Command",
+   "ai.search_models": "Search models...",
+   "ai.switched_to_model": "Switched to model: %1",
++  "bar.resources.nothing": "No metrics enabled",
+   "bar.resources.tooltip": "System Resources",
+   "bar.systray.overflow_empty": "Drag tray icons here",
+   "bar.tooltip.audio_switcher": "Audio Device Switcher",
+   "bar.tooltip.controls": "Audio & Brightness Controls",
+diff --git a/translations/ru.json b/translations/ru.json
+--- a/translations/ru.json
++++ b/translations/ru.json
+@@ -127,7 +127,8 @@
+   "ai.run_command": "Выполнить команду",
+   "ai.search_models": "Поиск моделей...",
+   "ai.switched_to_model": "Модель переключена: %1",
++  "bar.resources.nothing": "Нет включённых показателей",
+   "bar.resources.tooltip": "Системные ресурсы",
+   "bar.systray.overflow_empty": "Перетащите значки сюда",
+   "bar.tooltip.audio_switcher": "Переключатель аудиоустройств",
+   "bar.tooltip.controls": "Управление звуком и яркостью",
+diff --git a/translations/es.json b/translations/es.json
+--- a/translations/es.json
++++ b/translations/es.json
+@@ -123,7 +123,8 @@
+   "ai.run_command": "Ejecutar comando",
+   "ai.search_models": "Buscar modelos...",
+   "ai.switched_to_model": "Modelo cambiado: %1",
++  "bar.resources.nothing": "No hay métricas activadas",
+   "bar.resources.tooltip": "Recursos del sistema",
+   "bar.systray.overflow_empty": "Arrastra iconos aquí",
+   "bar.tooltip.audio_switcher": "Selector de dispositivo de audio",
+   "bar.tooltip.controls": "Controles de audio y brillo",

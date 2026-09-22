@@ -32,9 +32,44 @@ should be composed. Dependencies always load before the packages that require
 them. When two packages add something at the same place in a file, load order
 decides which block comes first.
 
-Calendar support also needs the Python modules listed in its pull request. The
-manager checks executable dependencies, but Python import packages remain the
-responsibility of the distribution or user environment.
+Calendar support needs `python3`, `notify-send`, and `xdg-open`. Google Calendar
+accounts use `google-auth`, `google-auth-oauthlib`, and `google-api-python-client`;
+CalDAV accounts use `caldav`, `icalendar`, and `requests`. Install the modules for
+the provider you use into the Python environment that runs Ambxst. The manager
+checks executables, not Python imports. Importing existing gcalcli credentials is
+optional and requires a trusted local credential file.
+
+Reminder sounds are optional. The calendar tries `canberra-gtk-play` for themed
+sounds, then available `paplay`, `pw-play`, or `aplay` players. Custom sound files
+can also use `ffplay`. These are alternatives, so the manifest does not require
+all of them. Audio device switcher can read headset battery status through
+`dbus-send` and ArctisManager; audio switching works without that service.
+Keyboard layout names use `sh`, `awk`, and the system XKB rules at
+`/usr/share/X11/xkb/rules/evdev.lst`.
+
+## Languages and release metadata
+
+Each package includes `CHANGELOG.md` and declares its interface language support.
+Audio device switcher, Bar resource monitor, Keyboard layout indicator, and
+Calendar integration use Ambxst's English, Russian, and Spanish dictionaries.
+Calendar's Python service errors and notification actions remain in English;
+event titles, device names, and provider responses keep their original language.
+Volume scroll adds no interface text and declares `localization.mode: "none"`.
+The resource monitor includes a patch for its missing empty-state translations.
+
+Language metadata describes the implementation; it does not install translations.
+These packages use base dictionaries, so they do not declare standalone resource
+files. They configure existing Ambxst settings directly and do not provide a
+separate mod settings schema. None depends on another mod.
+
+The packages are active and declare `deprecated: false`. A retired release should
+set `deprecated: true` and explain removal in `deprecated_reason`. Do not mark a
+working package deprecated just to demonstrate the notice.
+
+Global automatic updates, per-mod overrides, and check frequency are controlled
+in **Settings → Mods**, not in manifests. After applying an update, restart the
+shell to load it. Volume scroll conflicts with the compact-player volume-scroll
+example shipped in Ambxst; enable only one of them.
 
 ## Move a package into Ambxst core
 
