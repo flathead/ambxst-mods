@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- Show readable English settings before the mod is enabled.
+- Translate settings into Russian and Spanish after activation and reload.
+
 ## 1.0.0
 
 - Add a responsive KDE Connect bar button and helper popup.

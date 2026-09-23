@@ -3,81 +3,81 @@
   "fields": [
     {
       "key": "buttonVisible",
-      "label": "kde_connect_helper.settings.button_visible",
-      "description": "kde_connect_helper.settings.button_visible_description",
+      "label": "Show bar button",
+      "description": "Show the KDE Connect helper in the bar.",
       "type": "boolean",
       "default": true
     },
     {
       "key": "placement",
-      "label": "kde_connect_helper.settings.placement",
-      "description": "kde_connect_helper.settings.placement_description",
+      "label": "Bar placement",
+      "description": "Place the button at the leading or trailing side of either bar orientation.",
       "type": "enum",
       "default": "trailing",
       "options": [
-        { "label": "kde_connect_helper.settings.leading", "value": "leading" },
-        { "label": "kde_connect_helper.settings.trailing", "value": "trailing" }
+        { "label": "Left or top", "value": "leading" },
+        { "label": "Right or bottom", "value": "trailing" }
       ]
     },
     {
       "key": "appearance",
-      "label": "kde_connect_helper.settings.appearance",
-      "description": "kde_connect_helper.settings.appearance_description",
+      "label": "Button appearance",
+      "description": "Choose a compact or detailed bar button.",
       "type": "enum",
       "default": "compact",
       "options": [
-        { "label": "kde_connect_helper.settings.compact", "value": "compact" },
-        { "label": "kde_connect_helper.settings.detailed", "value": "detailed" }
+        { "label": "Compact", "value": "compact" },
+        { "label": "Detailed", "value": "detailed" }
       ]
     },
     {
       "key": "displayMode",
-      "label": "kde_connect_helper.settings.display_mode",
-      "description": "kde_connect_helper.settings.display_mode_description",
+      "label": "Button content",
+      "description": "Choose the information shown beside the phone icon.",
       "type": "enum",
       "default": "icon-status",
       "options": [
-        { "label": "kde_connect_helper.settings.icon_only", "value": "icon-only" },
-        { "label": "kde_connect_helper.settings.icon_device", "value": "icon-device" },
-        { "label": "kde_connect_helper.settings.icon_status", "value": "icon-status" },
-        { "label": "kde_connect_helper.settings.battery_oriented", "value": "battery" }
+        { "label": "Icon only", "value": "icon-only" },
+        { "label": "Icon and device", "value": "icon-device" },
+        { "label": "Icon and status", "value": "icon-status" },
+        { "label": "Battery oriented", "value": "battery" }
       ]
     },
     {
       "key": "preferredDevice",
-      "label": "kde_connect_helper.settings.preferred_device",
-      "description": "kde_connect_helper.settings.preferred_device_description",
+      "label": "Preferred device",
+      "description": "Use auto or select a device from the popup. Device identifiers are stored here.",
       "type": "string",
       "default": "auto"
     },
     {
       "key": "primaryClick",
-      "label": "kde_connect_helper.settings.primary_click",
-      "description": "kde_connect_helper.settings.primary_click_description",
+      "label": "Primary click action",
+      "description": "Open the helper popup or the official KDE Connect interface.",
       "type": "enum",
       "default": "popup",
       "options": [
-        { "label": "kde_connect_helper.settings.open_popup", "value": "popup" },
-        { "label": "kde_connect_helper.settings.open_interface", "value": "interface" }
+        { "label": "Open helper popup", "value": "popup" },
+        { "label": "Open KDE Connect", "value": "interface" }
       ]
     },
     {
       "key": "batteryDisplay",
-      "label": "kde_connect_helper.settings.battery_display",
-      "description": "kde_connect_helper.settings.battery_display_description",
+      "label": "Battery display",
+      "description": "Choose how battery information appears inside the bar button.",
       "type": "enum",
       "default": "outline",
       "options": [
-        { "label": "kde_connect_helper.settings.hidden", "value": "hidden" },
-        { "label": "kde_connect_helper.settings.percentage", "value": "percentage" },
-        { "label": "kde_connect_helper.settings.outline", "value": "outline" },
-        { "label": "kde_connect_helper.settings.percentage_outline", "value": "percentage-outline" }
+        { "label": "Hidden", "value": "hidden" },
+        { "label": "Percentage", "value": "percentage" },
+        { "label": "Circular outline", "value": "outline" },
+        { "label": "Percentage and outline", "value": "percentage-outline" }
       ]
     },
     {
       "key": "pollingInterval",
-      "label": "kde_connect_helper.settings.polling_interval",
-      "description": "kde_connect_helper.settings.polling_interval_description",
+      "label": "Polling interval",
+      "description": "Seconds between status checks while the daemon is running, from 5 to 300.",
       "type": "integer",
       "default": 15,
       "minimum": 5,
@@ -85,58 +85,58 @@
     },
     {
       "key": "hideDisconnected",
-      "label": "kde_connect_helper.settings.hide_disconnected",
-      "description": "kde_connect_helper.settings.hide_disconnected_description",
+      "label": "Hide when disconnected",
+      "description": "Hide the button when no paired device is connected, while keeping recovery states visible.",
       "type": "boolean",
       "default": false
     },
     {
       "key": "hideKdeConnectLabel",
-      "label": "kde_connect_helper.settings.hide_label",
-      "description": "kde_connect_helper.settings.hide_label_description",
+      "label": "Hide KDE Connect label",
+      "description": "Hide the text label in the detailed button and popup heading.",
       "type": "boolean",
       "default": false
     },
     {
       "key": "showPing",
-      "label": "kde_connect_helper.settings.show_ping",
+      "label": "Show ping action",
       "type": "boolean",
       "default": true
     },
     {
       "key": "showRing",
-      "label": "kde_connect_helper.settings.show_ring",
+      "label": "Show ring action",
       "type": "boolean",
       "default": true
     },
     {
       "key": "showFileShare",
-      "label": "kde_connect_helper.settings.show_file_share",
+      "label": "Show file sharing",
       "type": "boolean",
       "default": true
     },
     {
       "key": "showTextShare",
-      "label": "kde_connect_helper.settings.show_text_share",
+      "label": "Show text sharing",
       "type": "boolean",
       "default": true
     },
     {
       "key": "showStatusLabels",
-      "label": "kde_connect_helper.settings.show_status_labels",
+      "label": "Show status labels",
       "type": "boolean",
       "default": true
     },
     {
       "key": "showTooltips",
-      "label": "kde_connect_helper.settings.show_tooltips",
+      "label": "Show tooltips",
       "type": "boolean",
       "default": true
     },
     {
       "key": "ringThickness",
-      "label": "kde_connect_helper.settings.ring_thickness",
-      "description": "kde_connect_helper.settings.ring_thickness_description",
+      "label": "Battery ring thickness",
+      "description": "Set the circular outline width from 1 to 6 pixels.",
       "type": "number",
       "default": 3,
       "minimum": 1,
@@ -144,15 +144,15 @@
     },
     {
       "key": "ringColor",
-      "label": "kde_connect_helper.settings.ring_color",
-      "description": "kde_connect_helper.settings.color_description",
+      "label": "Battery ring color",
+      "description": "Enter a hexadecimal color such as #66bb6a.",
       "type": "string",
       "default": "#66bb6a"
     },
     {
       "key": "lowBatteryThreshold",
-      "label": "kde_connect_helper.settings.low_battery_threshold",
-      "description": "kde_connect_helper.settings.low_battery_threshold_description",
+      "label": "Low battery threshold",
+      "description": "Use the low battery color at or below this percentage.",
       "type": "integer",
       "default": 20,
       "minimum": 0,
@@ -160,8 +160,8 @@
     },
     {
       "key": "lowBatteryColor",
-      "label": "kde_connect_helper.settings.low_battery_color",
-      "description": "kde_connect_helper.settings.color_description",
+      "label": "Low battery color",
+      "description": "Enter a hexadecimal color such as #66bb6a.",
       "type": "string",
       "default": "#ef5350"
     }

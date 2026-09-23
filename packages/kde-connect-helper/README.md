@@ -34,4 +34,4 @@ Autostart uses a marked user systemd service when the user manager is available.
 
 External commands use validated executable paths and argument arrays. There is no shell evaluation. Process output is bounded, device identifiers are validated, operations have timeouts, and file or text sharing requires confirmation. The helper does not log device names, file paths, or shared text.
 
-All interface and settings text is translated into English, Russian, and Spanish through Ambxst's localization service. The settings patch only routes schema labels, descriptions, and enum choices through the existing `I18n` service. It contains no mod-manager backend, update, or recovery code.
+All interface and settings text is translated into English, Russian, and Spanish through Ambxst's localization service. Before the mod is enabled, its settings use readable English because disabled packages cannot register translations. After activation and reload, the settings follow the Ambxst language. The settings patch only routes schema labels, descriptions, and enum choices through the existing `I18n` service. It contains no mod-manager backend, update, or recovery code.
