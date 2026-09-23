@@ -1,0 +1,21 @@
+{
+  "installed": true,
+  "daemonRunning": true,
+  "launcher": { "path": "/usr/bin/kdeconnect-app", "kind": "application", "arguments": [] },
+  "autostart": { "state": "disabled", "method": "systemd", "path": "fixture.service" },
+  "devices": [
+    {
+      "id": "fixture-offline",
+      "name": "Offline phone",
+      "paired": true,
+      "reachable": false,
+      "hasBattery": false,
+      "battery": -1,
+      "charging": false,
+      "supportsPing": false,
+      "supportsRing": false,
+      "supportsShare": false,
+      "supportsText": false
+    }
+  ]
+}

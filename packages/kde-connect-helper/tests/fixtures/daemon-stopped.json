@@ -1,0 +1,7 @@
+{
+  "installed": true,
+  "daemonRunning": false,
+  "launcher": { "path": "/usr/bin/kdeconnect-app", "kind": "application", "arguments": [] },
+  "autostart": { "state": "disabled", "method": "systemd", "path": "fixture.service" },
+  "devices": []
+}

@@ -1,0 +1,7 @@
+{
+  "installed": true,
+  "daemonRunning": true,
+  "launcher": { "path": "/usr/bin/kdeconnect-app", "kind": "application", "arguments": [] },
+  "autostart": { "state": "enabled", "method": "system", "path": "/etc/xdg/autostart/org.kde.kdeconnect.daemon.desktop" },
+  "devices": []
+}

@@ -1,0 +1,21 @@
+{
+  "installed": true,
+  "daemonRunning": true,
+  "launcher": { "path": "/usr/bin/kdeconnect-app", "kind": "application", "arguments": [] },
+  "autostart": { "state": "enabled", "method": "systemd", "path": "fixture.service" },
+  "devices": [
+    {
+      "id": "fixture-connected",
+      "name": "Connected phone",
+      "paired": true,
+      "reachable": true,
+      "hasBattery": true,
+      "battery": 18,
+      "charging": true,
+      "supportsPing": true,
+      "supportsRing": true,
+      "supportsShare": true,
+      "supportsText": true
+    }
+  ]
+}

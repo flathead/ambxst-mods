@@ -1,0 +1,72 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Axenide/Ambxst/dev/docs/mods/manifest.schema.json",
+  "manifestVersion": 1,
+  "id": "community.kde-connect-helper",
+  "name": "KDE Connect helper",
+  "version": "1.0.0",
+  "description": "Adds a KDE Connect status button, device actions, guided installation, and portable user autostart controls.",
+  "license": "AGPL-3.0-only",
+  "author": "flathead",
+  "authorUrl": "https://github.com/flathead",
+  "homepage": "https://github.com/flathead/ambxst-mods/tree/main/packages/kde-connect-helper",
+  "compatibility": {
+    "api": 1,
+    "ambxst": ">=1.3.8 <1.4.0",
+    "testedBaseCommits": [
+      "2a704c438ddc0b94a11f4e4cf32a16220b62141f",
+      "148bb33b2ede68377caad5eb755e32071d7e9df7",
+      "7d2bfbf2e1edd8a64ef16476ef6013b9c7e85fbc"
+    ]
+  },
+  "commands": [
+    "python3"
+  ],
+  "permissions": [
+    "Reads KDE Connect device, connection, battery, and plugin data over the session D-Bus",
+    "Discovers trusted KDE Connect, qdbus, package manager, pkexec, and systemctl executables",
+    "Reads /etc/os-release to propose a distribution-specific KDE Connect installation method",
+    "Launches an official KDE Connect interface or the KDE Connect daemon after explicit user action",
+    "Sends ping and ring requests to the selected paired device after explicit user action",
+    "Shares a user-selected file or entered text with the selected paired device after confirmation",
+    "May invoke pkexec with pacman or dnf to install a fixed KDE Connect package after two confirmations",
+    "Reads and manages marked user-level systemd or XDG autostart files without root access",
+    "Stores mod settings and the preferred KDE Connect device identifier"
+  ],
+  "settings": {
+    "schema": "settings.json"
+  },
+  "operations": [
+    {
+      "type": "overlay",
+      "source": "payload/modules/bar/KdeConnectHelper.qml",
+      "target": "modules/bar/KdeConnectHelper.qml"
+    },
+    {
+      "type": "overlay",
+      "source": "payload/modules/services/KdeConnectService.qml",
+      "target": "modules/services/KdeConnectService.qml"
+    },
+    {
+      "type": "overlay",
+      "source": "payload/scripts/kde_connect_helper.py",
+      "target": "scripts/kde_connect_helper.py"
+    },
+    {
+      "type": "patch",
+      "source": "patches/feature.patch"
+    },
+    {
+      "type": "patch",
+      "source": "patches/localization.patch"
+    }
+  ],
+  "localization": {
+    "mode": "translated",
+    "defaultLanguage": "en",
+    "languages": [
+      "en",
+      "ru",
+      "es"
+    ]
+  }
+}

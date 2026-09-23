@@ -1,0 +1,169 @@
+{
+  "version": 1,
+  "fields": [
+    {
+      "key": "buttonVisible",
+      "label": "kde_connect_helper.settings.button_visible",
+      "description": "kde_connect_helper.settings.button_visible_description",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "key": "placement",
+      "label": "kde_connect_helper.settings.placement",
+      "description": "kde_connect_helper.settings.placement_description",
+      "type": "enum",
+      "default": "trailing",
+      "options": [
+        { "label": "kde_connect_helper.settings.leading", "value": "leading" },
+        { "label": "kde_connect_helper.settings.trailing", "value": "trailing" }
+      ]
+    },
+    {
+      "key": "appearance",
+      "label": "kde_connect_helper.settings.appearance",
+      "description": "kde_connect_helper.settings.appearance_description",
+      "type": "enum",
+      "default": "compact",
+      "options": [
+        { "label": "kde_connect_helper.settings.compact", "value": "compact" },
+        { "label": "kde_connect_helper.settings.detailed", "value": "detailed" }
+      ]
+    },
+    {
+      "key": "displayMode",
+      "label": "kde_connect_helper.settings.display_mode",
+      "description": "kde_connect_helper.settings.display_mode_description",
+      "type": "enum",
+      "default": "icon-status",
+      "options": [
+        { "label": "kde_connect_helper.settings.icon_only", "value": "icon-only" },
+        { "label": "kde_connect_helper.settings.icon_device", "value": "icon-device" },
+        { "label": "kde_connect_helper.settings.icon_status", "value": "icon-status" },
+        { "label": "kde_connect_helper.settings.battery_oriented", "value": "battery" }
+      ]
+    },
+    {
+      "key": "preferredDevice",
+      "label": "kde_connect_helper.settings.preferred_device",
+      "description": "kde_connect_helper.settings.preferred_device_description",
+      "type": "string",
+      "default": "auto"
+    },
+    {
+      "key": "primaryClick",
+      "label": "kde_connect_helper.settings.primary_click",
+      "description": "kde_connect_helper.settings.primary_click_description",
+      "type": "enum",
+      "default": "popup",
+      "options": [
+        { "label": "kde_connect_helper.settings.open_popup", "value": "popup" },
+        { "label": "kde_connect_helper.settings.open_interface", "value": "interface" }
+      ]
+    },
+    {
+      "key": "batteryDisplay",
+      "label": "kde_connect_helper.settings.battery_display",
+      "description": "kde_connect_helper.settings.battery_display_description",
+      "type": "enum",
+      "default": "outline",
+      "options": [
+        { "label": "kde_connect_helper.settings.hidden", "value": "hidden" },
+        { "label": "kde_connect_helper.settings.percentage", "value": "percentage" },
+        { "label": "kde_connect_helper.settings.outline", "value": "outline" },
+        { "label": "kde_connect_helper.settings.percentage_outline", "value": "percentage-outline" }
+      ]
+    },
+    {
+      "key": "pollingInterval",
+      "label": "kde_connect_helper.settings.polling_interval",
+      "description": "kde_connect_helper.settings.polling_interval_description",
+      "type": "integer",
+      "default": 15,
+      "minimum": 5,
+      "maximum": 300
+    },
+    {
+      "key": "hideDisconnected",
+      "label": "kde_connect_helper.settings.hide_disconnected",
+      "description": "kde_connect_helper.settings.hide_disconnected_description",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "key": "hideKdeConnectLabel",
+      "label": "kde_connect_helper.settings.hide_label",
+      "description": "kde_connect_helper.settings.hide_label_description",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "key": "showPing",
+      "label": "kde_connect_helper.settings.show_ping",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "key": "showRing",
+      "label": "kde_connect_helper.settings.show_ring",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "key": "showFileShare",
+      "label": "kde_connect_helper.settings.show_file_share",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "key": "showTextShare",
+      "label": "kde_connect_helper.settings.show_text_share",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "key": "showStatusLabels",
+      "label": "kde_connect_helper.settings.show_status_labels",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "key": "showTooltips",
+      "label": "kde_connect_helper.settings.show_tooltips",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "key": "ringThickness",
+      "label": "kde_connect_helper.settings.ring_thickness",
+      "description": "kde_connect_helper.settings.ring_thickness_description",
+      "type": "number",
+      "default": 3,
+      "minimum": 1,
+      "maximum": 6
+    },
+    {
+      "key": "ringColor",
+      "label": "kde_connect_helper.settings.ring_color",
+      "description": "kde_connect_helper.settings.color_description",
+      "type": "string",
+      "default": "#66bb6a"
+    },
+    {
+      "key": "lowBatteryThreshold",
+      "label": "kde_connect_helper.settings.low_battery_threshold",
+      "description": "kde_connect_helper.settings.low_battery_threshold_description",
+      "type": "integer",
+      "default": 20,
+      "minimum": 0,
+      "maximum": 50
+    },
+    {
+      "key": "lowBatteryColor",
+      "label": "kde_connect_helper.settings.low_battery_color",
+      "description": "kde_connect_helper.settings.color_description",
+      "type": "string",
+      "default": "#ef5350"
+    }
+  ]
+}

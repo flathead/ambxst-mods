@@ -1,0 +1,132 @@
+diff --git a/modules/bar/BarContent.qml b/modules/bar/BarContent.qml
+index 9d43848a..7479e20e 100644
+--- a/modules/bar/BarContent.qml
++++ b/modules/bar/BarContent.qml
+@@ -383,6 +383,17 @@ Item {
+                             enableShadow: root.shadowsEnabled
+                         }
+ 
++                        Loader {
++                            active: KdeConnectService.shouldShowButton && KdeConnectService.placement === "leading"
++                            visible: active
++                            sourceComponent: KdeConnectHelper {
++                                bar: root
++                                layerEnabled: root.shadowsEnabled
++                                startRadius: root.innerRadius
++                                endRadius: root.innerRadius
++                            }
++                        }
++
+                         Workspaces {
+                             orientation: root.orientation
+                             bar: QtObject {
+@@ -558,6 +569,17 @@ Item {
+                             endRadius: root.innerRadius
+                         }
+ 
++                        Loader {
++                            active: KdeConnectService.shouldShowButton && KdeConnectService.placement === "trailing"
++                            visible: active
++                            sourceComponent: KdeConnectHelper {
++                                bar: root
++                                layerEnabled: root.shadowsEnabled
++                                startRadius: root.innerRadius
++                                endRadius: root.innerRadius
++                            }
++                        }
++
+                         PowerButton {
+                             id: powerButton
+                             startRadius: root.innerRadius
+@@ -583,6 +605,18 @@ Item {
+                             enableShadow: root.shadowsEnabled
+                         }
+ 
++                        Loader {
++                            active: KdeConnectService.shouldShowButton && KdeConnectService.placement === "leading"
++                            visible: active
++                            Layout.alignment: Qt.AlignHCenter
++                            sourceComponent: KdeConnectHelper {
++                                bar: root
++                                layerEnabled: root.shadowsEnabled
++                                startRadius: root.innerRadius
++                                endRadius: root.innerRadius
++                            }
++                        }
++
+                         SysTray {
+                             bar: root
+                             enableShadow: root.shadowsEnabled
+@@ -765,6 +799,18 @@ Item {
+                             endRadius: root.innerRadius
+                         }
+ 
++                        Loader {
++                            active: KdeConnectService.shouldShowButton && KdeConnectService.placement === "trailing"
++                            visible: active
++                            Layout.alignment: Qt.AlignHCenter
++                            sourceComponent: KdeConnectHelper {
++                                bar: root
++                                layerEnabled: root.shadowsEnabled
++                                startRadius: root.innerRadius
++                                endRadius: root.innerRadius
++                            }
++                        }
++
+                         PowerButton {
+                             id: powerButtonVert
+                             Layout.preferredHeight: 36
+diff --git a/modules/theme/Icons.qml b/modules/theme/Icons.qml
+index 3333506c..d2ed392a 100644
+--- a/modules/theme/Icons.qml
++++ b/modules/theme/Icons.qml
+@@ -222,6 +222,7 @@ QtObject {
+ 
+     readonly property string headphones: ""
+     readonly property string mouse: ""
++    readonly property string deviceMobile: ""
+     readonly property string phone: ""
+     readonly property string watch: ""
+     readonly property string gamepad: ""
+diff --git a/modules/widgets/dashboard/controls/ModsPanel.qml b/modules/widgets/dashboard/controls/ModsPanel.qml
+index 66cbd27d..44e5b27a 100644
+--- a/modules/widgets/dashboard/controls/ModsPanel.qml
++++ b/modules/widgets/dashboard/controls/ModsPanel.qml
+@@ -1177,7 +1177,7 @@ Item {
+ 
+                                         Text {
+                                             Layout.fillWidth: true
+-                                            text: settingRow.modelData.label
++                                            text: root.tr(settingRow.modelData.label)
+                                             font.family: Config.theme.font
+                                             font.pixelSize: Styling.fontSize(-1)
+                                             font.weight: Font.Medium
+@@ -1188,7 +1188,7 @@ Item {
+                                         Text {
+                                             visible: (settingRow.modelData.description ?? "") !== ""
+                                             Layout.fillWidth: true
+-                                            text: settingRow.modelData.description ?? ""
++                                            text: root.tr(settingRow.modelData.description ?? "")
+                                             font.family: Config.theme.font
+                                             font.pixelSize: Styling.fontSize(-2)
+                                             color: Colors.outline
+@@ -1214,7 +1214,7 @@ Item {
+                                             const value = ModsService.settingsValues[settingRow.modelData.key];
+                                             for (let i = 0; i < options.length; i++) {
+                                                 if (options[i].value === value)
+-                                                    return options[i].label;
++                                                    return root.tr(options[i].label);
+                                             }
+                                             return String(value ?? root.tr("mods.select"));
+                                         }
+@@ -1247,8 +1247,8 @@ Item {
+                                         font.pixelSize: Styling.fontSize(-1)
+                                         selectByMouse: true
+                                         inputMethodHints: settingRow.modelData.type === "string" ? Qt.ImhNone : Qt.ImhFormattedNumbersOnly
+-                                        Accessible.name: settingRow.modelData.label
+-                                        Accessible.description: settingRow.modelData.description ?? ""
++                                        Accessible.name: root.tr(settingRow.modelData.label)
++                                        Accessible.description: root.tr(settingRow.modelData.description ?? "")
+                                         background: StyledRect {
+                                             variant: settingInput.activeFocus ? "focus" : "common"
+                                             radius: Styling.radius(-2)

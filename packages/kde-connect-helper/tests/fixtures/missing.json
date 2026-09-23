@@ -1,0 +1,7 @@
+{
+  "installed": false,
+  "daemonRunning": false,
+  "launcher": { "path": "", "kind": "none", "arguments": [] },
+  "autostart": { "state": "unavailable", "method": "manual", "path": "" },
+  "devices": []
+}

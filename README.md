@@ -47,6 +47,37 @@ all of them. Audio device switcher can read headset battery status through
 Keyboard layout names use `sh`, `awk`, and the system XKB rules at
 `/usr/share/X11/xkb/rules/evdev.lst`.
 
+## KDE Connect helper
+
+KDE Connect helper is available at:
+
+```text
+https://github.com/flathead/ambxst-mods/tree/main/packages/kde-connect-helper
+```
+
+It adds a responsive bar button, a device popup, battery presentation, confirmed
+file and text sharing, supported ping and ring actions, and official KDE Connect
+launchers. The only mandatory command is `python3`; `kdeconnect-cli` remains
+optional so the missing-package view can load. Text sharing also checks for the
+Python D-Bus binding and stays disabled when it is unavailable. The manifest
+declares D-Bus device access, executable discovery, explicit daemon and launcher
+startup, confirmed device actions, optional package installation, user
+autostart file management, and preferred-device storage.
+
+On Arch and derivatives, the confirmed graphical installer uses `pkexec` with
+pacman and the `kdeconnect` package. On Fedora and derivatives, it uses `pkexec`
+with dnf and the `kde-connect` package. Installation never starts on load and
+requires two deliberate steps. NixOS receives the declarative
+`programs.kdeconnect.enable = true;` option and an optional user-profile command;
+the mod never edits Nix, flake, Home Manager, Hyprland, Niri, shell profile, or
+system configuration files.
+
+Autostart prefers a marked user systemd service and falls back to a marked XDG
+autostart entry. Disabling it removes only files owned by the mod. External
+commands use validated executable paths and argument arrays without shell
+evaluation. Output is bounded, device identifiers are validated, operations
+time out, and sharing requires confirmation.
+
 ## Languages and release metadata
 
 Each package includes `CHANGELOG.md` and declares its interface language support.
@@ -56,6 +87,8 @@ Calendar's Python service errors and notification actions remain in English;
 event titles, device names, and provider responses keep their original language.
 Volume scroll adds no interface text and declares `localization.mode: "none"`.
 The resource monitor includes a patch for its missing empty-state translations.
+KDE Connect helper translates its interface and settings into all three
+languages.
 
 Language metadata describes the implementation; it does not install translations.
 These packages use base dictionaries, so they do not declare standalone resource

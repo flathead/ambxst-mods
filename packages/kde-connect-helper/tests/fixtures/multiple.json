@@ -1,0 +1,34 @@
+{
+  "installed": true,
+  "daemonRunning": true,
+  "launcher": { "path": "/usr/bin/kdeconnect-app", "kind": "application", "arguments": [] },
+  "autostart": { "state": "enabled", "method": "systemd", "path": "fixture.service" },
+  "devices": [
+    {
+      "id": "fixture-one",
+      "name": "First phone",
+      "paired": true,
+      "reachable": true,
+      "hasBattery": true,
+      "battery": 71,
+      "charging": false,
+      "supportsPing": true,
+      "supportsRing": true,
+      "supportsShare": true,
+      "supportsText": true
+    },
+    {
+      "id": "fixture-two",
+      "name": "Second phone",
+      "paired": true,
+      "reachable": true,
+      "hasBattery": false,
+      "battery": -1,
+      "charging": false,
+      "supportsPing": true,
+      "supportsRing": false,
+      "supportsShare": true,
+      "supportsText": true
+    }
+  ]
+}
