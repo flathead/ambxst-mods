@@ -91,9 +91,9 @@
       "default": false
     },
     {
-      "key": "hideKdeConnectLabel",
-      "label": "Hide KDE Connect label",
-      "description": "Hide the text label in the detailed button and popup heading.",
+      "key": "hideKdeConnectTrayIcon",
+      "label": "Hide KDE Connect tray icon",
+      "description": "Hide the separate KDE Connect status icon from the system tray.",
       "type": "boolean",
       "default": false
     },
@@ -136,7 +136,7 @@
     {
       "key": "ringThickness",
       "label": "Battery ring thickness",
-      "description": "Set the circular outline width from 1 to 6 pixels.",
+      "description": "Set the battery progress outline width from 1 to 6 pixels.",
       "type": "number",
       "default": 3,
       "minimum": 1,
@@ -164,6 +164,22 @@
       "description": "Enter a hexadecimal color such as #66bb6a.",
       "type": "string",
       "default": "#ef5350"
+    },
+    {
+      "key": "warningBatteryThreshold",
+      "label": "Warning battery threshold",
+      "description": "Use the warning color at or below this percentage.",
+      "type": "integer",
+      "default": 50,
+      "minimum": 20,
+      "maximum": 90
+    },
+    {
+      "key": "warningBatteryColor",
+      "label": "Warning battery color",
+      "description": "Enter a hexadecimal color such as #fbc02d.",
+      "type": "string",
+      "default": "#fbc02d"
     }
   ]
 }

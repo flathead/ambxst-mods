@@ -199,6 +199,22 @@ class HelperTests(unittest.TestCase):
             helper.private_dbus_call("/fixture/share", "fixture.interface", "shareText", "private text")
         method.assert_called_once_with("private text", timeout=5)
 
+    def test_multiple_file_share_validates_and_sends_each_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            first = pathlib.Path(directory) / "first.txt"
+            second = pathlib.Path(directory) / "second.txt"
+            first.write_text("first", encoding="utf-8")
+            second.write_text("second", encoding="utf-8")
+            with mock.patch.object(helper, "daemon_running", return_value=True), mock.patch.object(
+                helper, "has_plugin", return_value=True
+            ), mock.patch.object(helper, "qdbus_call") as call:
+                helper.action({
+                    "kind": "share_files",
+                    "deviceId": "valid-device-id",
+                    "paths": [str(first), str(second)],
+                })
+        self.assertEqual(call.call_count, 2)
+
 
 class PackageIntegrationTests(unittest.TestCase):
     def test_bar_widget_exports_loader_dimensions(self) -> None:
@@ -215,16 +231,45 @@ class PackageIntegrationTests(unittest.TestCase):
         self.assertIn('color: Styling.srItem("overprimary")', widget)
         self.assertIn("barButton.hovered || barButton.activeFocus", widget)
         self.assertIn("anchorItem: buttonBackground", widget)
-        self.assertIn("function roundedButtonPath", widget)
-        self.assertIn("context.setLineDash([perimeter * value / 100, perimeter])", widget)
+        self.assertIn("function buttonOutlinePoints", widget)
+        self.assertIn("function strokeFraction", widget)
+        self.assertIn("const topLeft = buttonBackground.topLeftRadius", widget)
+        self.assertIn("const bottomRight = buttonBackground.bottomRightRadius", widget)
+        self.assertNotIn("setLineDash", widget)
+        self.assertIn("strokeFraction(context, points, value / 100)", widget)
         self.assertIn("anchors.fill: parent\n                visible: root.showRing && root.hasBattery", widget)
-        self.assertIn("&& !KdeConnectService.hideKdeConnectLabel", widget)
         self.assertIn("readonly property string buttonLabel", widget)
+        self.assertIn("readonly property string selectedContent", widget)
+        self.assertIn('KdeConnectService.appearance === "compact"', widget)
+        self.assertIn('return device.name + " · " + batteryLabel', widget)
+        self.assertIn('KdeConnectService.displayMode === "battery" ? 72 : 112', widget)
+        self.assertIn("KdeConnectService.warningBatteryColor", widget)
         self.assertIn("text: Icons.deviceMobile", widget)
-        self.assertIn("Layout.preferredWidth: root.expandedButton ? 105 : 32", widget)
         self.assertIn("id: helperButtonBackground", widget)
         self.assertIn("color: helperButtonBackground.item", widget)
         self.assertIn("control.danger ? Colors.red : helperButtonBackground.item", widget)
+
+    def test_tray_setting_hides_only_kde_connect_items(self) -> None:
+        feature_patch = (PACKAGE / "patches/feature.patch").read_text(encoding="utf-8")
+        service = (PACKAGE / "payload/modules/services/KdeConnectService.qml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("function isKdeConnectItem", feature_patch)
+        self.assertIn('identity.includes("kde connect")', feature_patch)
+        self.assertIn("hideKdeConnectTrayIcon", service)
+
+    def test_file_sharing_uses_the_desktop_portal(self) -> None:
+        widget = (PACKAGE / "payload/modules/bar/KdeConnectHelper.qml").read_text(encoding="utf-8")
+        service = (PACKAGE / "payload/modules/services/KdeConnectService.qml").read_text(
+            encoding="utf-8"
+        )
+        helper_source = HELPER_PATH.read_text(encoding="utf-8")
+        self.assertNotIn("QtQuick.Dialogs", widget)
+        self.assertNotIn("FileDialog {", widget)
+        self.assertIn('send("choose_files", { title:', service)
+        self.assertIn('I18n.t("kde_connect_helper.choose_file")', widget)
+        self.assertIn('"org.freedesktop.portal.FileChooser"', helper_source)
+        self.assertIn('"multiple": dbus.Boolean(True)', helper_source)
 
     def test_mod_text_fields_have_a_distinct_resting_surface(self) -> None:
         feature_patch = (PACKAGE / "patches/feature.patch").read_text(encoding="utf-8")

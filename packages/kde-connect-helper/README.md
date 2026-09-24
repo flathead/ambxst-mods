@@ -2,7 +2,7 @@
 
 KDE Connect helper adds a 36-pixel Ambxst bar control for paired devices. It supports horizontal and vertical bars, connected and offline devices, multiple-device selection, battery status, and Ambxst styling.
 
-The popup can refresh discovery, start the daemon, open an installed official KDE Connect interface, manage user autostart, ping or ring a supported device, and share a confirmed file or text. Unsupported actions stay disabled and explain why. Device state comes from structured D-Bus properties instead of localized CLI output.
+The popup can refresh discovery, start the daemon, open an installed official KDE Connect interface, manage user autostart, ping or ring a supported device, and share confirmed files or text. File selection uses the desktop portal, so the system provides the picker. Unsupported actions stay disabled and explain why. Device state comes from structured D-Bus properties instead of localized CLI output.
 
 ## Install
 
@@ -34,4 +34,4 @@ Autostart uses a marked user systemd service when the user manager is available.
 
 External commands use validated executable paths and argument arrays. Privileged installation accepts only fixed, root-owned package-manager and `pkexec` paths. There is no shell evaluation. Process output is bounded, device identifiers are validated, operations have timeouts, and file or text sharing requires confirmation. The helper does not log device names, file paths, or shared text.
 
-All interface and settings text is translated into English, Russian, and Spanish through Ambxst's localization service. Before the mod is enabled, its settings use readable English because disabled packages cannot register translations. After activation and reload, the settings follow the Ambxst language. The settings patch only routes schema labels, descriptions, and enum choices through the existing `I18n` service. It contains no mod-manager backend, update, or recovery code.
+All interface and settings text is translated into English, Russian, and Spanish through Ambxst's localization service. Before the mod is enabled, its settings use readable English because disabled packages cannot register translations. After activation and reload, the settings follow the Ambxst language. The tray option hides only KDE Connect status items identified by their tray metadata. The settings patch only routes schema labels, descriptions, and enum choices through the existing `I18n` service. It contains no mod-manager backend, update, or recovery code.

@@ -57,7 +57,8 @@ https://github.com/flathead/ambxst-mods/tree/main/packages/kde-connect-helper
 
 It adds a responsive bar button, a device popup, battery presentation, confirmed
 file and text sharing, supported ping and ring actions, and official KDE Connect
-launchers. The only mandatory command is `python3`; `kdeconnect-cli` remains
+launchers. File selection uses the configured desktop portal, including multiple
+files. The only mandatory command is `python3`; `kdeconnect-cli` remains
 optional so the missing-package view can load. Text sharing also checks for the
 Python D-Bus binding and stays disabled when it is unavailable. The manifest
 declares D-Bus device access, executable discovery, explicit daemon and launcher

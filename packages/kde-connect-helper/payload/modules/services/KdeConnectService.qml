@@ -25,11 +25,13 @@ Singleton {
     property bool showTextShare: true
     property bool showStatusLabels: true
     property bool showTooltips: true
-    property bool hideKdeConnectLabel: false
+    property bool hideKdeConnectTrayIcon: false
     property real ringThickness: 3
     property string ringColor: "#66bb6a"
     property int lowBatteryThreshold: 20
     property string lowBatteryColor: "#ef5350"
+    property int warningBatteryThreshold: 50
+    property string warningBatteryColor: "#fbc02d"
 
     property bool installed: false
     property bool daemonRunning: false
@@ -70,6 +72,7 @@ Singleton {
         && (!hideDisconnected || connectedDevices.length > 0 || !installed || !daemonRunning)
 
     signal refreshed
+    signal filesChosen(var paths)
 
     function applySetting(key, value) {
         switch (key) {
@@ -88,11 +91,13 @@ Singleton {
         case "showTextShare": showTextShare = !!value; break;
         case "showStatusLabels": showStatusLabels = !!value; break;
         case "showTooltips": showTooltips = !!value; break;
-        case "hideKdeConnectLabel": hideKdeConnectLabel = !!value; break;
+        case "hideKdeConnectTrayIcon": hideKdeConnectTrayIcon = !!value; break;
         case "ringThickness": ringThickness = Math.max(1, Math.min(6, Number(value) || 3)); break;
         case "ringColor": ringColor = validColor(value, "#66bb6a"); break;
         case "lowBatteryThreshold": lowBatteryThreshold = Math.max(0, Math.min(50, Number(value) || 20)); break;
         case "lowBatteryColor": lowBatteryColor = validColor(value, "#ef5350"); break;
+        case "warningBatteryThreshold": warningBatteryThreshold = Math.max(lowBatteryThreshold, Math.min(90, Number(value) || 50)); break;
+        case "warningBatteryColor": warningBatteryColor = validColor(value, "#fbc02d"); break;
         }
     }
 
@@ -163,6 +168,10 @@ Singleton {
         send("open", {}, 12000);
     }
 
+    function chooseFiles(title) {
+        send("choose_files", { title: String(title || "KDE Connect") }, 310000);
+    }
+
     function setAutostart(enabled) {
         send(enabled ? "enable_autostart" : "disable_autostart", {}, 15000);
     }
@@ -175,9 +184,13 @@ Singleton {
         const data = { kind: kind, deviceId: selectedDevice.id };
         if (kind === "share_file")
             data.path = String(extra ?? "");
+        if (kind === "share_files")
+            data.paths = Array.isArray(extra) ? extra : [];
         if (kind === "share_text")
             data.text = String(extra ?? "");
-        send("action", data, 15000);
+        const timeout = kind === "share_files"
+            ? Math.min(120000, 10000 + data.paths.length * 6000) : 15000;
+        send("action", data, timeout);
     }
 
     function setMessage(code, error) {
@@ -221,6 +234,12 @@ Singleton {
         }
         if (command === "install_plan") {
             installPlan = data;
+            return;
+        }
+        if (command === "choose_files") {
+            const paths = Array.isArray(data.paths) ? data.paths : [];
+            if (paths.length > 0)
+                filesChosen(paths);
             return;
         }
         setMessage(response.code, false);

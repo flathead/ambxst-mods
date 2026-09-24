@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.4
+
+- Follow the bar button's actual four-corner geometry with the battery progress outline.
+- Show the device name with its percentage in the detailed battery-oriented mode.
+- Draw only the measured battery fraction instead of relying on unsupported dashed Canvas strokes.
+- Add configurable yellow warning and red low-battery ranges.
+- Apply the icon, device, status, and battery content selector to compact buttons.
+- Make the hide option remove the separate KDE Connect system tray icon.
+- Use the desktop portal to select and confirm one or more files.
+
 ## 1.0.3
 
 - Draw battery progress clockwise around the native button surface instead of using a circular badge.

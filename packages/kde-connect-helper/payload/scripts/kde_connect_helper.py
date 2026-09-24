@@ -17,12 +17,21 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.parse
+import uuid
 from typing import Any
 
 try:
     import dbus
+    from dbus.mainloop.glib import DBusGMainLoop
 except ImportError:
     dbus = None
+    DBusGMainLoop = None
+
+try:
+    from gi.repository import GLib
+except ImportError:
+    GLib = None
 
 
 SERVICE = "org.kde.kdeconnect"
@@ -349,13 +358,17 @@ def action(request: dict[str, Any]) -> dict[str, Any]:
         if not has_plugin(device_id, "kdeconnect_findmyphone"):
             raise CommandFailure("ring_unsupported")
         qdbus_call(base + "/findmyphone", "org.kde.kdeconnect.device.findmyphone.ring")
-    elif kind == "share_file":
+    elif kind in {"share_file", "share_files"}:
         if not has_plugin(device_id, "kdeconnect_share"):
             raise CommandFailure("file_unsupported")
-        path = pathlib.Path(str(request.get("path", "")))
-        if not path.is_absolute() or not path.is_file():
+        requested_paths = request.get("paths") if kind == "share_files" else [request.get("path", "")]
+        if not isinstance(requested_paths, list) or not 1 <= len(requested_paths) <= 32:
             raise CommandFailure("file_missing")
-        qdbus_call(base + "/share", "org.kde.kdeconnect.device.share.shareUrl", path.as_uri())
+        paths = [pathlib.Path(str(value)) for value in requested_paths]
+        if any(not path.is_absolute() or not path.is_file() for path in paths):
+            raise CommandFailure("file_missing")
+        for path in paths:
+            qdbus_call(base + "/share", "org.kde.kdeconnect.device.share.shareUrl", path.as_uri())
     elif kind == "share_text":
         if not has_plugin(device_id, "kdeconnect_share"):
             raise CommandFailure("text_unsupported")
@@ -368,6 +381,53 @@ def action(request: dict[str, Any]) -> dict[str, Any]:
     else:
         raise CommandFailure("action_unsupported")
     return {}
+
+
+def choose_files(request: dict[str, Any]) -> dict[str, Any]:
+    if dbus is None or DBusGMainLoop is None or GLib is None:
+        raise CommandFailure("file_picker_unavailable")
+    DBusGMainLoop(set_as_default=True)
+    bus = dbus.SessionBus()
+    desktop = bus.get_object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
+    chooser = dbus.Interface(desktop, "org.freedesktop.portal.FileChooser")
+    token = "kch_" + uuid.uuid4().hex
+    options = dbus.Dictionary({
+        "handle_token": dbus.String(token),
+        "multiple": dbus.Boolean(True),
+        "modal": dbus.Boolean(True),
+    }, signature="sv")
+    title = str(request.get("title", "")).strip()[:160] or "KDE Connect"
+    handle = str(chooser.OpenFile("", title, options))
+    loop = GLib.MainLoop()
+    result: dict[str, Any] = {"received": False, "response": 2, "uris": []}
+
+    def receive_response(response: int, values: Any) -> None:
+        result["received"] = True
+        result["response"] = int(response)
+        result["uris"] = [str(uri) for uri in values.get("uris", [])]
+        loop.quit()
+
+    request_object = bus.get_object("org.freedesktop.portal.Desktop", handle)
+    request_object.connect_to_signal(
+        "Response", receive_response, dbus_interface="org.freedesktop.portal.Request"
+    )
+    timeout_id = GLib.timeout_add_seconds(300, lambda: (loop.quit(), False)[1])
+    loop.run()
+    if result["received"]:
+        GLib.source_remove(timeout_id)
+    if result["response"] != 0:
+        return {"paths": []}
+    paths = []
+    for uri in result["uris"][:32]:
+        parsed = urllib.parse.urlparse(uri)
+        if parsed.scheme != "file" or parsed.netloc not in {"", "localhost"}:
+            continue
+        path = pathlib.Path(urllib.parse.unquote(parsed.path))
+        if path.is_absolute() and path.is_file():
+            paths.append(str(path))
+    if not paths:
+        raise CommandFailure("file_missing")
+    return {"paths": paths}
 
 
 def open_interface(request: dict[str, Any]) -> dict[str, Any]:
@@ -569,6 +629,7 @@ def disable_autostart(request: dict[str, Any]) -> dict[str, Any]:
 HANDLERS = {
     "scan": scan,
     "action": action,
+    "choose_files": choose_files,
     "open": open_interface,
     "start_daemon": start_daemon,
     "install_plan": install_plan,
@@ -589,6 +650,8 @@ def respond(request: dict[str, Any]) -> dict[str, Any]:
     except CommandFailure as error:
         return {"id": request_id, "ok": False, "code": error.code, "detail": error.detail[:160]}
     except (OSError, ValueError, json.JSONDecodeError):
+        return {"id": request_id, "ok": False, "code": "operation_failed"}
+    except Exception:
         return {"id": request_id, "ok": False, "code": "operation_failed"}
 
 

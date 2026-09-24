@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "id": "community.kde-connect-helper",
   "name": "KDE Connect helper",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Adds a KDE Connect status button, device actions, guided installation, and portable user autostart controls.",
   "license": "AGPL-3.0-only",
   "author": "flathead",
@@ -28,7 +28,8 @@
     "Reads /etc/os-release to propose a distribution-specific KDE Connect installation method",
     "Launches an official KDE Connect interface or the KDE Connect daemon after explicit user action",
     "Sends ping and ring requests to the selected paired device after explicit user action",
-    "Shares a user-selected file or entered text with the selected paired device after confirmation",
+    "Opens the desktop portal file picker and shares selected files or entered text after confirmation",
+    "Reads system tray item metadata to hide the separate KDE Connect tray icon when configured",
     "May invoke pkexec with pacman or dnf to install a fixed KDE Connect package after two confirmations",
     "Reads and manages marked user-level systemd or XDG autostart files without root access",
     "Stores mod settings and the preferred KDE Connect device identifier"

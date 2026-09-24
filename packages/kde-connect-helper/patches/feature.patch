@@ -5,7 +5,7 @@ index 9d43848a..012fccb9 100644
 @@ -383,6 +383,19 @@ Item {
                              enableShadow: root.shadowsEnabled
                          }
- 
+
 +                        Loader {
 +                            active: KdeConnectService.shouldShowButton && KdeConnectService.placement === "leading"
 +                            visible: active
@@ -25,7 +25,7 @@ index 9d43848a..012fccb9 100644
 @@ -558,6 +571,19 @@ Item {
                              endRadius: root.innerRadius
                          }
- 
+
 +                        Loader {
 +                            active: KdeConnectService.shouldShowButton && KdeConnectService.placement === "trailing"
 +                            visible: active
@@ -45,7 +45,7 @@ index 9d43848a..012fccb9 100644
 @@ -583,6 +609,20 @@ Item {
                              enableShadow: root.shadowsEnabled
                          }
- 
+
 +                        Loader {
 +                            active: KdeConnectService.shouldShowButton && KdeConnectService.placement === "leading"
 +                            visible: active
@@ -66,7 +66,7 @@ index 9d43848a..012fccb9 100644
 @@ -765,6 +805,20 @@ Item {
                              endRadius: root.innerRadius
                          }
- 
+
 +                        Loader {
 +                            active: KdeConnectService.shouldShowButton && KdeConnectService.placement === "trailing"
 +                            visible: active
@@ -84,12 +84,41 @@ index 9d43848a..012fccb9 100644
                          PowerButton {
                              id: powerButtonVert
                              Layout.preferredHeight: 36
+diff --git a/modules/bar/systray/SysTray.qml b/modules/bar/systray/SysTray.qml
+index ee1392e0..7b206397 100644
+--- a/modules/bar/systray/SysTray.qml
++++ b/modules/bar/systray/SysTray.qml
+@@ -20,12 +20,21 @@ StyledRect {
+     property bool vertical: bar.orientation === "vertical"
+
+     readonly property var allItems: SystemTray.items?.values ?? []
++    readonly property var eligibleItems: allItems.filter(item =>
++        !KdeConnectService.hideKdeConnectTrayIcon || !isKdeConnectItem(item))
+     readonly property var hiddenIds: StateService.systrayHidden
+-    readonly property var visibleItems: allItems.filter(item => !hiddenIds.includes(item.id))
+-    readonly property var overflowItems: allItems.filter(item => hiddenIds.includes(item.id))
++    readonly property var visibleItems: eligibleItems.filter(item => !hiddenIds.includes(item.id))
++    readonly property var overflowItems: eligibleItems.filter(item => hiddenIds.includes(item.id))
+
+     // The tray collapses to a chevron-only pill while every icon is in the popup
+-    readonly property bool hasItems: allItems.length > 0
++    readonly property bool hasItems: eligibleItems.length > 0
++
++    function isKdeConnectItem(item) {
++        const identity = [item?.id, item?.title, item?.icon]
++            .map(value => String(value ?? "").toLowerCase())
++            .join(" ");
++        return identity.includes("kde connect") || identity.includes("kdeconnect");
++    }
+
+     // Menu popup currently opened from an icon inside the overflow popup
+     property var activeChildMenu: null
 diff --git a/modules/theme/Icons.qml b/modules/theme/Icons.qml
 index 3333506c..d2ed392a 100644
 --- a/modules/theme/Icons.qml
 +++ b/modules/theme/Icons.qml
 @@ -222,6 +222,7 @@ QtObject {
- 
+
      readonly property string headphones: ""
      readonly property string mouse: ""
 +    readonly property string deviceMobile: ""
@@ -122,7 +151,7 @@ index 66cbd27d..892d5f28 100644
                                  const source = text.trim();
                                  if (source !== "")
 @@ -1177,7 +1178,7 @@ Item {
- 
+
                                          Text {
                                              Layout.fillWidth: true
 -                                            text: settingRow.modelData.label

@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import qs.config
 import qs.modules.components
 import qs.modules.services
@@ -17,7 +16,7 @@ Item {
     property bool layerEnabled: true
     property real startRadius: Styling.radius(0)
     property real endRadius: Styling.radius(0)
-    property string pendingFile: ""
+    property var pendingFiles: []
     property string confirmAction: ""
     property int installStep: 0
 
@@ -43,33 +42,43 @@ Item {
     readonly property string statusText: statusKey === "connected_count"
         ? I18n.t("kde_connect_helper.status.connected_count", KdeConnectService.connectedDevices.length)
         : I18n.t("kde_connect_helper.status." + statusKey)
-    readonly property string barDetail: {
+    readonly property string batteryLabel: showPercent && hasBattery
+        ? Math.round(device.battery) + "%" : ""
+    readonly property string selectedContent: {
         if (KdeConnectService.displayMode === "icon-device")
             return device?.name ?? I18n.t("kde_connect_helper.no_device");
         if (KdeConnectService.displayMode === "icon-status")
             return statusText;
-        if (KdeConnectService.displayMode === "battery" && hasBattery)
-            return Math.round(device.battery) + "%";
+        if (KdeConnectService.displayMode === "battery")
+            return batteryLabel.length > 0 ? batteryLabel : statusText;
         return "";
+    }
+    readonly property string detailedContent: {
+        if (KdeConnectService.displayMode === "battery" && device) {
+            if (batteryLabel.length > 0)
+                return device.name + " · " + batteryLabel;
+            return device.name + " · " + statusText;
+        }
+        if (selectedContent.length > 0 && batteryLabel.length > 0)
+            return selectedContent + " · " + batteryLabel;
+        return selectedContent;
     }
     readonly property bool expandedButton: !vertical
         && KdeConnectService.appearance === "detailed"
         && KdeConnectService.displayMode !== "icon-only"
-        && !KdeConnectService.hideKdeConnectLabel
-        && barDetail.length > 0
-    readonly property string batteryLabel: showPercent && hasBattery
-        ? Math.round(device.battery) + "%" : ""
+        && detailedContent.length > 0
     readonly property string buttonLabel: {
-        if (expandedButton) {
-            if (batteryLabel.length > 0 && KdeConnectService.displayMode !== "battery")
-                return barDetail + " · " + batteryLabel;
-            return barDetail;
-        }
-        return batteryLabel;
+        if (expandedButton)
+            return detailedContent;
+        if (!vertical && KdeConnectService.appearance === "compact"
+                && KdeConnectService.displayMode !== "icon-only")
+            return selectedContent;
+        return "";
     }
-    readonly property bool inlineBatteryLabel: !expandedButton && buttonLabel.length > 0
+    readonly property bool compactLabel: !expandedButton && buttonLabel.length > 0
 
-    implicitWidth: vertical ? 36 : (expandedButton ? 148 : (inlineBatteryLabel ? 72 : 36))
+    implicitWidth: vertical ? 36 : (expandedButton ? 148
+        : (compactLabel ? (KdeConnectService.displayMode === "battery" ? 72 : 112) : 36))
     implicitHeight: 36
     Layout.preferredWidth: implicitWidth
     Layout.preferredHeight: implicitHeight
@@ -204,46 +213,89 @@ Item {
                 antialiasing: true
                 z: 2
 
-                function roundedButtonPath(context, inset, cornerRadius) {
+                function appendArc(points, centerX, centerY, radius, startAngle, endAngle) {
+                    if (radius <= 0) {
+                        points.push({ x: centerX, y: centerY });
+                        return;
+                    }
+                    const steps = 8;
+                    for (let step = 1; step <= steps; step++) {
+                        const angle = startAngle + (endAngle - startAngle) * step / steps;
+                        points.push({
+                            x: centerX + Math.cos(angle) * radius,
+                            y: centerY + Math.sin(angle) * radius
+                        });
+                    }
+                }
+
+                function buttonOutlinePoints(inset, topLeft, topRight, bottomRight, bottomLeft) {
                     const left = inset;
                     const top = inset;
                     const right = width - inset;
                     const bottom = height - inset;
-                    const radius = Math.max(1, Math.min(cornerRadius, (right - left) / 2, (bottom - top) / 2));
+                    const maxRadius = Math.min((right - left) / 2, (bottom - top) / 2);
+                    const tl = Math.max(0, Math.min(topLeft - inset, maxRadius));
+                    const tr = Math.max(0, Math.min(topRight - inset, maxRadius));
+                    const br = Math.max(0, Math.min(bottomRight - inset, maxRadius));
+                    const bl = Math.max(0, Math.min(bottomLeft - inset, maxRadius));
+                    const points = [{ x: (left + right) / 2, y: top }, { x: right - tr, y: top }];
+                    appendArc(points, right - tr, top + tr, tr, -Math.PI / 2, 0);
+                    points.push({ x: right, y: bottom - br });
+                    appendArc(points, right - br, bottom - br, br, 0, Math.PI / 2);
+                    points.push({ x: left + bl, y: bottom });
+                    appendArc(points, left + bl, bottom - bl, bl, Math.PI / 2, Math.PI);
+                    points.push({ x: left, y: top + tl });
+                    appendArc(points, left + tl, top + tl, tl, Math.PI, Math.PI * 1.5);
+                    points.push({ x: (left + right) / 2, y: top });
+                    return points;
+                }
+
+                function strokeFraction(context, points, fraction) {
+                    let total = 0;
+                    for (let index = 1; index < points.length; index++)
+                        total += Math.hypot(points[index].x - points[index - 1].x,
+                            points[index].y - points[index - 1].y);
+                    let remaining = total * Math.max(0, Math.min(1, fraction));
                     context.beginPath();
-                    context.moveTo((left + right) / 2, top);
-                    context.lineTo(right - radius, top);
-                    context.quadraticCurveTo(right, top, right, top + radius);
-                    context.lineTo(right, bottom - radius);
-                    context.quadraticCurveTo(right, bottom, right - radius, bottom);
-                    context.lineTo(left + radius, bottom);
-                    context.quadraticCurveTo(left, bottom, left, bottom - radius);
-                    context.lineTo(left, top + radius);
-                    context.quadraticCurveTo(left, top, left + radius, top);
-                    context.lineTo((left + right) / 2, top);
+                    context.moveTo(points[0].x, points[0].y);
+                    for (let index = 1; index < points.length && remaining > 0; index++) {
+                        const previous = points[index - 1];
+                        const current = points[index];
+                        const length = Math.hypot(current.x - previous.x, current.y - previous.y);
+                        if (remaining >= length) {
+                            context.lineTo(current.x, current.y);
+                            remaining -= length;
+                        } else {
+                            const ratio = length > 0 ? remaining / length : 0;
+                            context.lineTo(previous.x + (current.x - previous.x) * ratio,
+                                previous.y + (current.y - previous.y) * ratio);
+                            remaining = 0;
+                        }
+                    }
+                    context.stroke();
                 }
 
                 onPaint: {
                     const context = getContext("2d");
                     context.reset();
                     const thickness = KdeConnectService.ringThickness;
-                    const inset = thickness / 2 + 1;
-                    const radius = Math.max(1, buttonBackground.radius - inset);
+                    const inset = thickness / 2;
+                    const topLeft = buttonBackground.topLeftRadius;
+                    const topRight = buttonBackground.topRightRadius;
+                    const bottomRight = buttonBackground.bottomRightRadius;
+                    const bottomLeft = buttonBackground.bottomLeftRadius;
                     const value = Math.max(0, Math.min(100, root.device?.battery ?? 0));
-                    const innerWidth = Math.max(1, width - inset * 2);
-                    const innerHeight = Math.max(1, height - inset * 2);
-                    const perimeter = 2 * (innerWidth + innerHeight - 4 * radius) + 2 * Math.PI * radius;
+                    const points = buttonOutlinePoints(inset, topLeft, topRight, bottomRight, bottomLeft);
                     context.lineWidth = thickness;
                     context.lineCap = "round";
+                    context.lineJoin = "round";
                     context.strokeStyle = Colors.outlineVariant;
-                    roundedButtonPath(context, inset, radius);
-                    context.stroke();
-                    context.setLineDash([perimeter * value / 100, perimeter]);
+                    strokeFraction(context, points, 1);
                     context.strokeStyle = value <= KdeConnectService.lowBatteryThreshold
-                        ? KdeConnectService.lowBatteryColor : KdeConnectService.ringColor;
-                    roundedButtonPath(context, inset, radius);
-                    context.stroke();
-                    context.setLineDash([]);
+                        ? KdeConnectService.lowBatteryColor
+                        : (value <= KdeConnectService.warningBatteryThreshold
+                            ? KdeConnectService.warningBatteryColor : KdeConnectService.ringColor);
+                    strokeFraction(context, points, value / 100);
                 }
 
                 onWidthChanged: requestPaint()
@@ -256,6 +308,8 @@ Item {
                     function onRingColorChanged() { batteryCanvas.requestPaint(); }
                     function onLowBatteryThresholdChanged() { batteryCanvas.requestPaint(); }
                     function onLowBatteryColorChanged() { batteryCanvas.requestPaint(); }
+                    function onWarningBatteryThresholdChanged() { batteryCanvas.requestPaint(); }
+                    function onWarningBatteryColorChanged() { batteryCanvas.requestPaint(); }
                 }
             }
         }
@@ -284,7 +338,8 @@ Item {
 
             Text {
                 visible: root.buttonLabel.length > 0
-                Layout.preferredWidth: root.expandedButton ? 105 : 32
+                Layout.preferredWidth: root.expandedButton ? 105
+                    : (KdeConnectService.displayMode === "battery" ? 32 : 72)
                 text: root.buttonLabel
                 color: helperPopup.isOpen ? buttonBackground.item : Styling.srItem("overprimary")
                 font.family: Styling.defaultFont
@@ -315,7 +370,7 @@ Item {
         contentHeight: installModal.visible
             ? Math.max(320, Math.min(390, (root.bar?.screen?.height ?? 454) - 64))
             : Math.max(320, Math.min(486, (root.bar?.screen?.height ?? 550) - 64))
-        closeOnFocusLost: !fileDialog.visible
+        closeOnFocusLost: KdeConnectService.operation !== "choose_files"
         onIsOpenChanged: {
             if (isOpen)
                 Qt.callLater(() => refreshButton.forceActiveFocus());
@@ -352,7 +407,6 @@ Item {
                         Layout.fillWidth: true
                         spacing: 0
                         Text {
-                            visible: !KdeConnectService.hideKdeConnectLabel
                             text: I18n.t("kde_connect_helper.title")
                             color: Colors.overBackground
                             font.family: Styling.defaultFont
@@ -594,7 +648,7 @@ Item {
                         iconText: Icons.file
                         labelText: I18n.t("kde_connect_helper.send_file")
                         enabled: !!root.device?.reachable && !!root.device?.supportsShare && !KdeConnectService.activeRequest
-                        onClicked: fileDialog.open()
+                        onClicked: KdeConnectService.chooseFiles(I18n.t("kde_connect_helper.choose_file"))
                     }
                     HelperButton {
                         Layout.fillWidth: true
@@ -899,7 +953,7 @@ Item {
                             enabled: !KdeConnectService.activeRequest
                             onClicked: {
                                 if (root.confirmAction === "file")
-                                    KdeConnectService.runAction("share_file", root.pendingFile);
+                                    KdeConnectService.runAction("share_files", root.pendingFiles);
                                 else {
                                     KdeConnectService.runAction("share_text", shareText.text);
                                     shareText.clear();
@@ -914,21 +968,14 @@ Item {
         }
     }
 
-    FileDialog {
-        id: fileDialog
-        title: I18n.t("kde_connect_helper.choose_file")
-        fileMode: FileDialog.OpenFile
-        onAccepted: {
-            const url = String(selectedFile);
-            root.pendingFile = decodeURIComponent(url.replace("file://", ""));
+    Connections {
+        target: KdeConnectService
+        function onFilesChosen(paths) {
+            root.pendingFiles = paths;
             root.confirmAction = "file";
             if (!helperPopup.isOpen)
                 helperPopup.open();
             confirmModal.visible = true;
-        }
-        onRejected: {
-            if (helperPopup.isOpen)
-                Qt.callLater(() => refreshButton.forceActiveFocus());
         }
     }
 

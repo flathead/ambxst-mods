@@ -1,8 +1,8 @@
 diff --git a/translations/en.json b/translations/en.json
-index 208813c8..5a057d12 100644
+index 208813c8..3a47bcf0 100644
 --- a/translations/en.json
 +++ b/translations/en.json
-@@ -855,5 +855,165 @@
+@@ -855,5 +855,169 @@
    "wifi.secured": "Secured",
    "wifi.title": "Wi-Fi",
    "wifi.tooltip_off": "Wi-Fi: Off",
@@ -22,8 +22,8 @@ index 208813c8..5a057d12 100644
 +  "kde_connect_helper.battery_value": "Battery: %1% %2",
 +  "kde_connect_helper.cancel": "Cancel",
 +  "kde_connect_helper.charging": "charging",
-+  "kde_connect_helper.choose_file": "Choose a file to send",
-+  "kde_connect_helper.confirm_file": "Send the selected file to this device?",
++  "kde_connect_helper.choose_file": "Choose files to send",
++  "kde_connect_helper.confirm_file": "Send the selected files to this device?",
 +  "kde_connect_helper.confirm_text": "Share this text with the selected device?",
 +  "kde_connect_helper.continue": "Continue",
 +  "kde_connect_helper.daemon_status": "Daemon: %1",
@@ -62,6 +62,7 @@ index 208813c8..5a057d12 100644
 +  "kde_connect_helper.message.disable_autostart_complete": "Autostart was disabled.",
 +  "kde_connect_helper.message.enable_autostart_complete": "Autostart was enabled.",
 +  "kde_connect_helper.message.file_missing": "The selected file is no longer available.",
++  "kde_connect_helper.message.file_picker_unavailable": "The system file picker is unavailable. Check the desktop portal service.",
 +  "kde_connect_helper.message.file_unsupported": "File sharing is not supported by this device.",
 +  "kde_connect_helper.message.fixture_disabled": "Test fixtures are disabled.",
 +  "kde_connect_helper.message.fixture_invalid": "The test fixture is invalid.",
@@ -105,7 +106,7 @@ index 208813c8..5a057d12 100644
 +  "kde_connect_helper.ring": "Ring",
 +  "kde_connect_helper.running": "Running",
 +  "kde_connect_helper.send": "Send",
-+  "kde_connect_helper.send_file": "Send file",
++  "kde_connect_helper.send_file": "Send files",
 +  "kde_connect_helper.share_text": "Share text",
 +  "kde_connect_helper.sharing": "Sharing",
 +  "kde_connect_helper.start_daemon": "Start KDE Connect",
@@ -136,8 +137,8 @@ index 208813c8..5a057d12 100644
 +  "Hidden": "Hidden",
 +  "Hide when disconnected": "Hide when disconnected",
 +  "Hide the button when no paired device is connected, while keeping recovery states visible.": "Hide the button when no paired device is connected, while keeping recovery states visible.",
-+  "Hide KDE Connect label": "Hide KDE Connect label",
-+  "Hide the text label in the detailed button and popup heading.": "Hide the text label in the detailed button and popup heading.",
++  "Hide KDE Connect tray icon": "Hide KDE Connect tray icon",
++  "Hide the separate KDE Connect status icon from the system tray.": "Hide the separate KDE Connect status icon from the system tray.",
 +  "Icon and device": "Icon and device",
 +  "Icon only": "Icon only",
 +  "Icon and status": "Icon and status",
@@ -145,6 +146,9 @@ index 208813c8..5a057d12 100644
 +  "Low battery color": "Low battery color",
 +  "Low battery threshold": "Low battery threshold",
 +  "Use the low battery color at or below this percentage.": "Use the low battery color at or below this percentage.",
++  "Warning battery color": "Warning battery color",
++  "Warning battery threshold": "Warning battery threshold",
++  "Use the warning color at or below this percentage.": "Use the warning color at or below this percentage.",
 +  "Open KDE Connect": "Open KDE Connect",
 +  "Open helper popup": "Open helper popup",
 +  "Circular outline": "Circular outline",
@@ -160,7 +164,7 @@ index 208813c8..5a057d12 100644
 +  "Open the helper popup or the official KDE Connect interface.": "Open the helper popup or the official KDE Connect interface.",
 +  "Battery ring color": "Battery ring color",
 +  "Battery ring thickness": "Battery ring thickness",
-+  "Set the circular outline width from 1 to 6 pixels.": "Set the circular outline width from 1 to 6 pixels.",
++  "Set the battery progress outline width from 1 to 6 pixels.": "Set the battery progress outline width from 1 to 6 pixels.",
 +  "Show file sharing": "Show file sharing",
 +  "Show ping action": "Show ping action",
 +  "Show ring action": "Show ring action",
@@ -170,10 +174,10 @@ index 208813c8..5a057d12 100644
 +  "Right or bottom": "Right or bottom"
  }
 diff --git a/translations/es.json b/translations/es.json
-index 4753da79..5a27297a 100644
+index 4753da79..51c8d9f9 100644
 --- a/translations/es.json
 +++ b/translations/es.json
-@@ -855,5 +855,165 @@
+@@ -855,5 +855,169 @@
    "wifi.secured": "Segura",
    "wifi.title": "Wi-Fi",
    "wifi.tooltip_off": "Wi-Fi: Desactivado",
@@ -193,8 +197,8 @@ index 4753da79..5a27297a 100644
 +  "kde_connect_helper.battery_value": "Batería: %1% %2",
 +  "kde_connect_helper.cancel": "Cancelar",
 +  "kde_connect_helper.charging": "cargando",
-+  "kde_connect_helper.choose_file": "Elija un archivo para enviar",
-+  "kde_connect_helper.confirm_file": "¿Enviar el archivo seleccionado a este dispositivo?",
++  "kde_connect_helper.choose_file": "Elija archivos para enviar",
++  "kde_connect_helper.confirm_file": "¿Enviar los archivos seleccionados a este dispositivo?",
 +  "kde_connect_helper.confirm_text": "¿Compartir este texto con el dispositivo seleccionado?",
 +  "kde_connect_helper.continue": "Continuar",
 +  "kde_connect_helper.daemon_status": "Servicio: %1",
@@ -233,6 +237,7 @@ index 4753da79..5a27297a 100644
 +  "kde_connect_helper.message.disable_autostart_complete": "Se desactivó el inicio automático.",
 +  "kde_connect_helper.message.enable_autostart_complete": "Se activó el inicio automático.",
 +  "kde_connect_helper.message.file_missing": "El archivo seleccionado ya no está disponible.",
++  "kde_connect_helper.message.file_picker_unavailable": "El selector de archivos del sistema no está disponible. Compruebe el servicio del portal de escritorio.",
 +  "kde_connect_helper.message.file_unsupported": "Este dispositivo no admite el envío de archivos.",
 +  "kde_connect_helper.message.fixture_disabled": "Los escenarios de prueba están desactivados.",
 +  "kde_connect_helper.message.fixture_invalid": "El escenario de prueba no es válido.",
@@ -276,7 +281,7 @@ index 4753da79..5a27297a 100644
 +  "kde_connect_helper.ring": "Hacer sonar",
 +  "kde_connect_helper.running": "En ejecución",
 +  "kde_connect_helper.send": "Enviar",
-+  "kde_connect_helper.send_file": "Enviar archivo",
++  "kde_connect_helper.send_file": "Enviar archivos",
 +  "kde_connect_helper.share_text": "Compartir texto",
 +  "kde_connect_helper.sharing": "Compartir",
 +  "kde_connect_helper.start_daemon": "Iniciar KDE Connect",
@@ -307,8 +312,8 @@ index 4753da79..5a27297a 100644
 +  "Hidden": "Oculto",
 +  "Hide when disconnected": "Ocultar sin conexión",
 +  "Hide the button when no paired device is connected, while keeping recovery states visible.": "Oculta el botón si no hay dispositivos vinculados conectados, pero mantiene visibles los estados de recuperación.",
-+  "Hide KDE Connect label": "Ocultar etiqueta de KDE Connect",
-+  "Hide the text label in the detailed button and popup heading.": "Oculta la etiqueta de texto en el botón detallado y en el encabezado de la ventana emergente.",
++  "Hide KDE Connect tray icon": "Ocultar icono de KDE Connect en la bandeja",
++  "Hide the separate KDE Connect status icon from the system tray.": "Oculta el icono de estado independiente de KDE Connect de la bandeja del sistema.",
 +  "Icon and device": "Icono y dispositivo",
 +  "Icon only": "Solo icono",
 +  "Icon and status": "Icono y estado",
@@ -316,6 +321,9 @@ index 4753da79..5a27297a 100644
 +  "Low battery color": "Color de batería baja",
 +  "Low battery threshold": "Umbral de batería baja",
 +  "Use the low battery color at or below this percentage.": "Usa el color de batería baja en este porcentaje o por debajo.",
++  "Warning battery color": "Color de advertencia de batería",
++  "Warning battery threshold": "Umbral de advertencia de batería",
++  "Use the warning color at or below this percentage.": "Usa el color de advertencia en este porcentaje o por debajo.",
 +  "Open KDE Connect": "Abrir KDE Connect",
 +  "Open helper popup": "Abrir ventana del asistente",
 +  "Circular outline": "Contorno circular",
@@ -331,7 +339,7 @@ index 4753da79..5a27297a 100644
 +  "Open the helper popup or the official KDE Connect interface.": "Abre la ventana del asistente o la interfaz oficial de KDE Connect.",
 +  "Battery ring color": "Color del anillo de batería",
 +  "Battery ring thickness": "Grosor del anillo de batería",
-+  "Set the circular outline width from 1 to 6 pixels.": "Define el ancho del contorno circular entre 1 y 6 píxeles.",
++  "Set the battery progress outline width from 1 to 6 pixels.": "Define el ancho del contorno de progreso de batería entre 1 y 6 píxeles.",
 +  "Show file sharing": "Mostrar envío de archivos",
 +  "Show ping action": "Mostrar acción de ping",
 +  "Show ring action": "Mostrar acción de llamada",
@@ -341,10 +349,10 @@ index 4753da79..5a27297a 100644
 +  "Right or bottom": "Derecha o abajo"
  }
 diff --git a/translations/ru.json b/translations/ru.json
-index 71b08528..e38e5156 100644
+index 71b08528..dd589cc9 100644
 --- a/translations/ru.json
 +++ b/translations/ru.json
-@@ -851,5 +851,165 @@
+@@ -851,5 +851,169 @@
    "wifi.secured": "Защищённая",
    "wifi.title": "Wi-Fi",
    "wifi.tooltip_off": "Wi-Fi: Выкл",
@@ -364,8 +372,8 @@ index 71b08528..e38e5156 100644
 +  "kde_connect_helper.battery_value": "Заряд: %1% %2",
 +  "kde_connect_helper.cancel": "Отмена",
 +  "kde_connect_helper.charging": "заряжается",
-+  "kde_connect_helper.choose_file": "Выберите файл для отправки",
-+  "kde_connect_helper.confirm_file": "Отправить выбранный файл на это устройство?",
++  "kde_connect_helper.choose_file": "Выберите файлы для отправки",
++  "kde_connect_helper.confirm_file": "Отправить выбранные файлы на это устройство?",
 +  "kde_connect_helper.confirm_text": "Поделиться этим текстом с выбранным устройством?",
 +  "kde_connect_helper.continue": "Продолжить",
 +  "kde_connect_helper.daemon_status": "Служба: %1",
@@ -404,6 +412,7 @@ index 71b08528..e38e5156 100644
 +  "kde_connect_helper.message.disable_autostart_complete": "Автозапуск выключен.",
 +  "kde_connect_helper.message.enable_autostart_complete": "Автозапуск включён.",
 +  "kde_connect_helper.message.file_missing": "Выбранный файл больше недоступен.",
++  "kde_connect_helper.message.file_picker_unavailable": "Системное окно выбора файлов недоступно. Проверьте службу портала рабочего стола.",
 +  "kde_connect_helper.message.file_unsupported": "Это устройство не поддерживает отправку файлов.",
 +  "kde_connect_helper.message.fixture_disabled": "Тестовые сценарии отключены.",
 +  "kde_connect_helper.message.fixture_invalid": "Тестовый сценарий недопустим.",
@@ -447,7 +456,7 @@ index 71b08528..e38e5156 100644
 +  "kde_connect_helper.ring": "Позвонить",
 +  "kde_connect_helper.running": "Работает",
 +  "kde_connect_helper.send": "Отправить",
-+  "kde_connect_helper.send_file": "Отправить файл",
++  "kde_connect_helper.send_file": "Отправить файлы",
 +  "kde_connect_helper.share_text": "Поделиться текстом",
 +  "kde_connect_helper.sharing": "Отправка данных",
 +  "kde_connect_helper.start_daemon": "Запустить KDE Connect",
@@ -478,8 +487,8 @@ index 71b08528..e38e5156 100644
 +  "Hidden": "Скрыт",
 +  "Hide when disconnected": "Скрывать без подключения",
 +  "Hide the button when no paired device is connected, while keeping recovery states visible.": "Скрывать кнопку, когда нет подключённых сопряжённых устройств, но оставлять состояния восстановления видимыми.",
-+  "Hide KDE Connect label": "Скрывать ярлык KDE Connect",
-+  "Hide the text label in the detailed button and popup heading.": "Скрывать текстовый ярлык в подробной кнопке и заголовке всплывающего окна.",
++  "Hide KDE Connect tray icon": "Скрывать значок KDE Connect в трее",
++  "Hide the separate KDE Connect status icon from the system tray.": "Скрывать отдельный значок состояния KDE Connect из системного трея.",
 +  "Icon and device": "Значок и устройство",
 +  "Icon only": "Только значок",
 +  "Icon and status": "Значок и состояние",
@@ -487,6 +496,9 @@ index 71b08528..e38e5156 100644
 +  "Low battery color": "Цвет низкого заряда",
 +  "Low battery threshold": "Порог низкого заряда",
 +  "Use the low battery color at or below this percentage.": "Использовать цвет низкого заряда при этом проценте или ниже.",
++  "Warning battery color": "Цвет предупреждения о заряде",
++  "Warning battery threshold": "Порог предупреждения о заряде",
++  "Use the warning color at or below this percentage.": "Использовать цвет предупреждения при этом проценте или ниже.",
 +  "Open KDE Connect": "Открыть KDE Connect",
 +  "Open helper popup": "Открыть окно помощника",
 +  "Circular outline": "Круговой контур",
@@ -502,7 +514,7 @@ index 71b08528..e38e5156 100644
 +  "Open the helper popup or the official KDE Connect interface.": "Открывать окно помощника или официальный интерфейс KDE Connect.",
 +  "Battery ring color": "Цвет контура заряда",
 +  "Battery ring thickness": "Толщина контура заряда",
-+  "Set the circular outline width from 1 to 6 pixels.": "Ширина кругового контура от 1 до 6 пикселей.",
++  "Set the battery progress outline width from 1 to 6 pixels.": "Толщина контура заряда от 1 до 6 пикселей.",
 +  "Show file sharing": "Показывать отправку файлов",
 +  "Show ping action": "Показывать сигнал",
 +  "Show ring action": "Показывать звонок",
