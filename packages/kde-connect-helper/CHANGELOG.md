@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.7
+
+- Show a charging icon without replacing the battery percentage.
+- Show the device name, connection state, battery percentage, and charging state in the bar tooltip.
+- Use the phone icon instead of a charging icon when battery information is unavailable.
+
 ## 1.0.6
 
 - Show the battery percentage as the primary content whenever battery-oriented mode has battery data.

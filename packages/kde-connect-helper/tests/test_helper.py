@@ -64,6 +64,8 @@ class HelperTests(unittest.TestCase):
             stopped = helper.scan({"fixture": str(fixture_dir / "daemon-stopped.json")})
             self.assertTrue(stopped["installed"])
             self.assertFalse(stopped["daemonRunning"])
+            connected = helper.scan({"fixture": str(fixture_dir / "connected.json")})
+            self.assertTrue(connected["devices"][0]["charging"])
 
     def test_malformed_fixture_is_rejected(self) -> None:
         with tempfile.NamedTemporaryFile("w", encoding="utf-8") as fixture:
@@ -251,11 +253,17 @@ class PackageIntegrationTests(unittest.TestCase):
             widget,
         )
         self.assertIn("? batteryPercentage", widget)
-        self.assertIn("? Icons.lightning : Icons.deviceMobile", widget)
+        self.assertIn(": Icons.deviceMobile", widget)
         self.assertIn('&& KdeConnectService.displayMode !== "battery"', widget)
         self.assertIn("return device.name;", widget)
         self.assertIn("KdeConnectService.warningBatteryColor", widget)
         self.assertIn("text: root.mainGlyph", widget)
+        self.assertIn("visible: root.deviceCharging", widget)
+        self.assertIn("hasBattery && !!device?.reachable && !!device?.charging", widget)
+        self.assertIn("text: Icons.lightning", widget)
+        self.assertIn("tooltipText: root.tooltipTitle", widget)
+        self.assertIn("desciription: root.tooltipDescription", widget)
+        self.assertIn('details.join(" · ")', widget)
         self.assertIn("id: helperButtonBackground", widget)
         self.assertIn("color: helperButtonBackground.item", widget)
         self.assertIn("control.danger ? Colors.red : helperButtonBackground.item", widget)

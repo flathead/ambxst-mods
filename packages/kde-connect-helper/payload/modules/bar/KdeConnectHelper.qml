@@ -44,11 +44,23 @@ Item {
         : I18n.t("kde_connect_helper.status." + statusKey)
     readonly property string batteryPercentage: hasBattery
         ? Math.round(device.battery) + "%" : ""
+    readonly property bool deviceCharging: hasBattery && !!device?.reachable && !!device?.charging
     readonly property bool batteryGlyphIsPercentage: KdeConnectService.displayMode === "battery"
         && batteryPercentage.length > 0
     readonly property string mainGlyph: batteryGlyphIsPercentage
         ? batteryPercentage
-        : (KdeConnectService.displayMode === "battery" ? Icons.lightning : Icons.deviceMobile)
+        : Icons.deviceMobile
+    readonly property string tooltipTitle: device?.name ?? I18n.t("kde_connect_helper.title")
+    readonly property string tooltipDescription: {
+        const details = [statusText];
+        if (device) {
+            details.push(hasBattery
+                ? I18n.t("kde_connect_helper.battery_value", Math.round(device.battery),
+                    deviceCharging ? I18n.t("kde_connect_helper.charging") : "")
+                : I18n.t("kde_connect_helper.battery_unavailable"));
+        }
+        return details.join(" · ");
+    }
     readonly property string selectedContent: {
         if (KdeConnectService.displayMode === "icon-device")
             return device?.name ?? I18n.t("kde_connect_helper.no_device");
@@ -180,7 +192,7 @@ Item {
         hoverEnabled: true
         activeFocusOnTab: true
         Accessible.name: I18n.t("kde_connect_helper.accessible.button")
-        Accessible.description: root.statusText
+        Accessible.description: root.tooltipTitle + ". " + root.tooltipDescription
         onClicked: root.openPrimary()
 
         HoverHandler {
@@ -349,6 +361,23 @@ Item {
                         ColorAnimation { duration: Config.animDuration / 2 }
                     }
                 }
+
+                Text {
+                    anchors.top: parent.top
+                    anchors.right: parent.right
+                    anchors.topMargin: 1
+                    anchors.rightMargin: 1
+                    visible: root.deviceCharging
+                    text: Icons.lightning
+                    font.family: Icons.font
+                    font.pixelSize: 9
+                    color: helperPopup.isOpen ? buttonBackground.item : Styling.srItem("overprimary")
+
+                    Behavior on color {
+                        enabled: Config.animDuration > 0
+                        ColorAnimation { duration: Config.animDuration / 2 }
+                    }
+                }
             }
 
             Text {
@@ -371,8 +400,8 @@ Item {
 
         StyledToolTip {
             show: KdeConnectService.showTooltips && barButton.hovered && !helperPopup.isOpen
-            tooltipText: I18n.t("kde_connect_helper.title")
-            desciription: root.statusText
+            tooltipText: root.tooltipTitle
+            desciription: root.tooltipDescription
         }
     }
 
