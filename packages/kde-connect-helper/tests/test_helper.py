@@ -215,6 +215,16 @@ class PackageIntegrationTests(unittest.TestCase):
         self.assertIn('color: Styling.srItem("overprimary")', widget)
         self.assertIn("barButton.hovered || barButton.activeFocus", widget)
         self.assertIn("anchorItem: buttonBackground", widget)
+        self.assertIn("function roundedButtonPath", widget)
+        self.assertIn("context.setLineDash([perimeter * value / 100, perimeter])", widget)
+        self.assertIn("anchors.fill: parent\n                visible: root.showRing && root.hasBattery", widget)
+        self.assertIn("&& !KdeConnectService.hideKdeConnectLabel", widget)
+        self.assertIn("readonly property string buttonLabel", widget)
+        self.assertIn("text: Icons.deviceMobile", widget)
+        self.assertIn("Layout.preferredWidth: root.expandedButton ? 105 : 32", widget)
+        self.assertIn("id: helperButtonBackground", widget)
+        self.assertIn("color: helperButtonBackground.item", widget)
+        self.assertIn("control.danger ? Colors.red : helperButtonBackground.item", widget)
 
     def test_mod_text_fields_have_a_distinct_resting_surface(self) -> None:
         feature_patch = (PACKAGE / "patches/feature.patch").read_text(encoding="utf-8")

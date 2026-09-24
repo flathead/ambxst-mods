@@ -55,8 +55,21 @@ Item {
     readonly property bool expandedButton: !vertical
         && KdeConnectService.appearance === "detailed"
         && KdeConnectService.displayMode !== "icon-only"
+        && !KdeConnectService.hideKdeConnectLabel
+        && barDetail.length > 0
+    readonly property string batteryLabel: showPercent && hasBattery
+        ? Math.round(device.battery) + "%" : ""
+    readonly property string buttonLabel: {
+        if (expandedButton) {
+            if (batteryLabel.length > 0 && KdeConnectService.displayMode !== "battery")
+                return barDetail + " · " + batteryLabel;
+            return barDetail;
+        }
+        return batteryLabel;
+    }
+    readonly property bool inlineBatteryLabel: !expandedButton && buttonLabel.length > 0
 
-    implicitWidth: vertical ? 36 : (expandedButton ? 148 : (showPercent && hasBattery ? 48 : 36))
+    implicitWidth: vertical ? 36 : (expandedButton ? 148 : (inlineBatteryLabel ? 72 : 36))
     implicitHeight: 36
     Layout.preferredWidth: implicitWidth
     Layout.preferredHeight: implicitHeight
@@ -122,6 +135,7 @@ Item {
         activeFocusOnTab: true
         Accessible.name: labelText
         background: StyledRect {
+            id: helperButtonBackground
             variant: control.down || control.checked ? "primary" : (control.hovered || control.activeFocus ? "focus" : "common")
             radius: Styling.radius(-4)
             enableShadow: false
@@ -133,12 +147,12 @@ Item {
                 text: control.iconText
                 font.family: Icons.font
                 font.pixelSize: 16
-                color: Colors.overBackground
+                color: helperButtonBackground.item
             }
             Text {
                 Layout.fillWidth: true
                 text: control.labelText
-                color: control.danger ? Colors.red : Colors.overBackground
+                color: control.danger ? Colors.red : helperButtonBackground.item
                 font.family: Styling.defaultFont
                 font.pixelSize: Styling.fontSize(-1)
                 elide: Text.ElideRight
@@ -182,6 +196,68 @@ Item {
                     NumberAnimation { duration: Config.animDuration / 2 }
                 }
             }
+
+            Canvas {
+                id: batteryCanvas
+                anchors.fill: parent
+                visible: root.showRing && root.hasBattery
+                antialiasing: true
+                z: 2
+
+                function roundedButtonPath(context, inset, cornerRadius) {
+                    const left = inset;
+                    const top = inset;
+                    const right = width - inset;
+                    const bottom = height - inset;
+                    const radius = Math.max(1, Math.min(cornerRadius, (right - left) / 2, (bottom - top) / 2));
+                    context.beginPath();
+                    context.moveTo((left + right) / 2, top);
+                    context.lineTo(right - radius, top);
+                    context.quadraticCurveTo(right, top, right, top + radius);
+                    context.lineTo(right, bottom - radius);
+                    context.quadraticCurveTo(right, bottom, right - radius, bottom);
+                    context.lineTo(left + radius, bottom);
+                    context.quadraticCurveTo(left, bottom, left, bottom - radius);
+                    context.lineTo(left, top + radius);
+                    context.quadraticCurveTo(left, top, left + radius, top);
+                    context.lineTo((left + right) / 2, top);
+                }
+
+                onPaint: {
+                    const context = getContext("2d");
+                    context.reset();
+                    const thickness = KdeConnectService.ringThickness;
+                    const inset = thickness / 2 + 1;
+                    const radius = Math.max(1, buttonBackground.radius - inset);
+                    const value = Math.max(0, Math.min(100, root.device?.battery ?? 0));
+                    const innerWidth = Math.max(1, width - inset * 2);
+                    const innerHeight = Math.max(1, height - inset * 2);
+                    const perimeter = 2 * (innerWidth + innerHeight - 4 * radius) + 2 * Math.PI * radius;
+                    context.lineWidth = thickness;
+                    context.lineCap = "round";
+                    context.strokeStyle = Colors.outlineVariant;
+                    roundedButtonPath(context, inset, radius);
+                    context.stroke();
+                    context.setLineDash([perimeter * value / 100, perimeter]);
+                    context.strokeStyle = value <= KdeConnectService.lowBatteryThreshold
+                        ? KdeConnectService.lowBatteryColor : KdeConnectService.ringColor;
+                    roundedButtonPath(context, inset, radius);
+                    context.stroke();
+                    context.setLineDash([]);
+                }
+
+                onWidthChanged: requestPaint()
+                onHeightChanged: requestPaint()
+
+                Connections {
+                    target: KdeConnectService
+                    function onSelectedDeviceChanged() { batteryCanvas.requestPaint(); }
+                    function onRingThicknessChanged() { batteryCanvas.requestPaint(); }
+                    function onRingColorChanged() { batteryCanvas.requestPaint(); }
+                    function onLowBatteryThresholdChanged() { batteryCanvas.requestPaint(); }
+                    function onLowBatteryColorChanged() { batteryCanvas.requestPaint(); }
+                }
+            }
         }
 
         contentItem: RowLayout {
@@ -192,46 +268,11 @@ Item {
                 Layout.preferredWidth: 30
                 Layout.preferredHeight: 30
 
-                Canvas {
-                    id: batteryCanvas
-                    anchors.fill: parent
-                    visible: root.showRing && root.hasBattery
-                    antialiasing: true
-                    onPaint: {
-                        const context = getContext("2d");
-                        context.reset();
-                        const center = width / 2;
-                        const radius = (width - KdeConnectService.ringThickness) / 2;
-                        const start = -Math.PI / 2;
-                        const value = Math.max(0, Math.min(100, root.device?.battery ?? 0));
-                        context.lineWidth = KdeConnectService.ringThickness;
-                        context.lineCap = "round";
-                        context.strokeStyle = Colors.outlineVariant;
-                        context.beginPath();
-                        context.arc(center, center, radius, 0, Math.PI * 2, false);
-                        context.stroke();
-                        context.strokeStyle = value <= KdeConnectService.lowBatteryThreshold
-                            ? KdeConnectService.lowBatteryColor : KdeConnectService.ringColor;
-                        context.beginPath();
-                        context.arc(center, center, radius, start, start + Math.PI * 2 * value / 100, false);
-                        context.stroke();
-                    }
-                    Connections {
-                        target: KdeConnectService
-                        function onSelectedDeviceChanged() { batteryCanvas.requestPaint(); }
-                        function onRingThicknessChanged() { batteryCanvas.requestPaint(); }
-                        function onRingColorChanged() { batteryCanvas.requestPaint(); }
-                        function onLowBatteryThresholdChanged() { batteryCanvas.requestPaint(); }
-                        function onLowBatteryColorChanged() { batteryCanvas.requestPaint(); }
-                    }
-                }
-
                 Text {
                     anchors.centerIn: parent
-                    text: root.showPercent && root.hasBattery ? Math.round(root.device.battery) + "%" : Icons.deviceMobile
-                    font.family: root.showPercent && root.hasBattery ? Styling.defaultFont : Icons.font
-                    font.pixelSize: root.showPercent && root.hasBattery ? Styling.fontSize(-2) : 17
-                    font.bold: root.showPercent && root.hasBattery
+                    text: Icons.deviceMobile
+                    font.family: Icons.font
+                    font.pixelSize: 17
                     color: helperPopup.isOpen ? buttonBackground.item : Styling.srItem("overprimary")
 
                     Behavior on color {
@@ -242,9 +283,9 @@ Item {
             }
 
             Text {
-                visible: root.expandedButton && !KdeConnectService.hideKdeConnectLabel
-                Layout.preferredWidth: 105
-                text: root.barDetail
+                visible: root.buttonLabel.length > 0
+                Layout.preferredWidth: root.expandedButton ? 105 : 32
+                text: root.buttonLabel
                 color: helperPopup.isOpen ? buttonBackground.item : Styling.srItem("overprimary")
                 font.family: Styling.defaultFont
                 font.pixelSize: Styling.fontSize(-1)

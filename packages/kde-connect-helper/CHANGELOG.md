@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.3
+
+- Draw battery progress clockwise around the native button surface instead of using a circular badge.
+- Keep the phone icon inside the button and place the percentage in a stable text slot.
+- Collapse detailed buttons when their text is hidden or unavailable instead of leaving an empty surface.
+- Use the theme-defined foreground color for selected and pressed popup actions.
+
 ## 1.0.2
 
 - Keep the helper button at its intended size when loaded into horizontal or vertical bars.
