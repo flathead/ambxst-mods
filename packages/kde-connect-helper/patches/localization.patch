@@ -1,8 +1,8 @@
 diff --git a/translations/en.json b/translations/en.json
-index 208813c8..3a47bcf0 100644
+index 208813c8..617e39ce 100644
 --- a/translations/en.json
 +++ b/translations/en.json
-@@ -855,5 +855,169 @@
+@@ -855,5 +855,168 @@
    "wifi.secured": "Secured",
    "wifi.title": "Wi-Fi",
    "wifi.tooltip_off": "Wi-Fi: Off",
@@ -124,16 +124,15 @@ index 208813c8..3a47bcf0 100644
 +  "kde_connect_helper.yes": "Yes",
 +  "Button appearance": "Button appearance",
 +  "Choose a compact or detailed bar button.": "Choose a compact or detailed bar button.",
++  "Choose the primary content shown in the bar button.": "Choose the primary content shown in the bar button.",
 +  "Battery display": "Battery display",
 +  "Choose how battery information appears inside the bar button.": "Choose how battery information appears inside the bar button.",
-+  "Battery oriented": "Battery oriented",
 +  "Show bar button": "Show bar button",
 +  "Show the KDE Connect helper in the bar.": "Show the KDE Connect helper in the bar.",
 +  "Enter a hexadecimal color such as #66bb6a.": "Enter a hexadecimal color such as #66bb6a.",
 +  "Compact": "Compact",
 +  "Detailed": "Detailed",
 +  "Button content": "Button content",
-+  "Choose the information shown beside the phone icon.": "Choose the information shown beside the phone icon.",
 +  "Hidden": "Hidden",
 +  "Hide when disconnected": "Hide when disconnected",
 +  "Hide the button when no paired device is connected, while keeping recovery states visible.": "Hide the button when no paired device is connected, while keeping recovery states visible.",
@@ -174,10 +173,10 @@ index 208813c8..3a47bcf0 100644
 +  "Right or bottom": "Right or bottom"
  }
 diff --git a/translations/es.json b/translations/es.json
-index 4753da79..51c8d9f9 100644
+index 4753da79..548da30f 100644
 --- a/translations/es.json
 +++ b/translations/es.json
-@@ -855,5 +855,169 @@
+@@ -855,5 +855,168 @@
    "wifi.secured": "Segura",
    "wifi.title": "Wi-Fi",
    "wifi.tooltip_off": "Wi-Fi: Desactivado",
@@ -299,16 +298,15 @@ index 4753da79..51c8d9f9 100644
 +  "kde_connect_helper.yes": "Sí",
 +  "Button appearance": "Aspecto del botón",
 +  "Choose a compact or detailed bar button.": "Elija un botón compacto o detallado para la barra.",
++  "Choose the primary content shown in the bar button.": "Elija el contenido principal que aparece en el botón de la barra.",
 +  "Battery display": "Visualización de batería",
 +  "Choose how battery information appears inside the bar button.": "Elija cómo aparece la batería dentro del botón de la barra.",
-+  "Battery oriented": "Orientado a la batería",
 +  "Show bar button": "Mostrar botón en la barra",
 +  "Show the KDE Connect helper in the bar.": "Muestra el asistente de KDE Connect en la barra.",
 +  "Enter a hexadecimal color such as #66bb6a.": "Introduzca un color hexadecimal como #66bb6a.",
 +  "Compact": "Compacto",
 +  "Detailed": "Detallado",
 +  "Button content": "Contenido del botón",
-+  "Choose the information shown beside the phone icon.": "Elija la información junto al icono del teléfono.",
 +  "Hidden": "Oculto",
 +  "Hide when disconnected": "Ocultar sin conexión",
 +  "Hide the button when no paired device is connected, while keeping recovery states visible.": "Oculta el botón si no hay dispositivos vinculados conectados, pero mantiene visibles los estados de recuperación.",
@@ -349,10 +347,10 @@ index 4753da79..51c8d9f9 100644
 +  "Right or bottom": "Derecha o abajo"
  }
 diff --git a/translations/ru.json b/translations/ru.json
-index 71b08528..dd589cc9 100644
+index 71b08528..c2bcfa07 100644
 --- a/translations/ru.json
 +++ b/translations/ru.json
-@@ -851,5 +851,169 @@
+@@ -851,5 +851,168 @@
    "wifi.secured": "Защищённая",
    "wifi.title": "Wi-Fi",
    "wifi.tooltip_off": "Wi-Fi: Выкл",
@@ -474,16 +472,15 @@ index 71b08528..dd589cc9 100644
 +  "kde_connect_helper.yes": "Да",
 +  "Button appearance": "Вид кнопки",
 +  "Choose a compact or detailed bar button.": "Выберите компактную или подробную кнопку панели.",
++  "Choose the primary content shown in the bar button.": "Выберите основное содержимое кнопки панели.",
 +  "Battery display": "Отображение заряда",
 +  "Choose how battery information appears inside the bar button.": "Выберите способ отображения заряда внутри кнопки панели.",
-+  "Battery oriented": "С акцентом на заряд",
 +  "Show bar button": "Показывать кнопку на панели",
 +  "Show the KDE Connect helper in the bar.": "Показывать помощник KDE Connect на панели.",
 +  "Enter a hexadecimal color such as #66bb6a.": "Введите шестнадцатеричный цвет, например #66bb6a.",
 +  "Compact": "Компактная",
 +  "Detailed": "Подробная",
 +  "Button content": "Содержимое кнопки",
-+  "Choose the information shown beside the phone icon.": "Выберите информацию рядом со значком телефона.",
 +  "Hidden": "Скрыт",
 +  "Hide when disconnected": "Скрывать без подключения",
 +  "Hide the button when no paired device is connected, while keeping recovery states visible.": "Скрывать кнопку, когда нет подключённых сопряжённых устройств, но оставлять состояния восстановления видимыми.",

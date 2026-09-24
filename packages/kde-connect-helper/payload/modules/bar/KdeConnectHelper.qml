@@ -23,7 +23,7 @@ Item {
     readonly property var device: KdeConnectService.selectedDevice
     readonly property bool showPercent: KdeConnectService.batteryDisplay === "percentage"
         || KdeConnectService.batteryDisplay === "percentage-outline"
-    readonly property bool showRing: KdeConnectService.batteryDisplay === "outline"
+    readonly property bool showBatteryOutline: KdeConnectService.batteryDisplay === "outline"
         || KdeConnectService.batteryDisplay === "percentage-outline"
     readonly property bool hasBattery: !!device?.hasBattery
     readonly property string statusKey: {
@@ -45,7 +45,7 @@ Item {
     readonly property string batteryPercentage: hasBattery
         ? Math.round(device.battery) + "%" : ""
     readonly property bool batteryGlyphIsPercentage: KdeConnectService.displayMode === "battery"
-        && showPercent && batteryPercentage.length > 0
+        && batteryPercentage.length > 0
     readonly property string mainGlyph: batteryGlyphIsPercentage
         ? batteryPercentage
         : (KdeConnectService.displayMode === "battery" ? Icons.lightning : Icons.deviceMobile)
@@ -212,7 +212,7 @@ Item {
             Canvas {
                 id: batteryCanvas
                 anchors.fill: parent
-                visible: root.showRing && root.hasBattery
+                visible: root.showBatteryOutline && root.hasBattery
                 antialiasing: true
                 z: 2
 
@@ -313,6 +313,17 @@ Item {
                     function onLowBatteryColorChanged() { batteryCanvas.requestPaint(); }
                     function onWarningBatteryThresholdChanged() { batteryCanvas.requestPaint(); }
                     function onWarningBatteryColorChanged() { batteryCanvas.requestPaint(); }
+                }
+
+                Connections {
+                    target: root
+                    function onStartRadiusChanged() { batteryCanvas.requestPaint(); }
+                    function onEndRadiusChanged() { batteryCanvas.requestPaint(); }
+                    function onVerticalChanged() { batteryCanvas.requestPaint(); }
+                    function onShowBatteryOutlineChanged() {
+                        if (root.showBatteryOutline)
+                            batteryCanvas.requestPaint();
+                    }
                 }
             }
         }
@@ -690,7 +701,11 @@ Item {
                                 remove(4096, length);
                         }
                         Accessible.name: I18n.t("kde_connect_helper.text_placeholder")
-                        background: StyledRect { variant: "common"; radius: Styling.radius(-4); enableShadow: false }
+                        background: StyledRect {
+                            variant: shareText.hovered || shareText.activeFocus ? "focus" : "internalbg"
+                            radius: Styling.radius(-4)
+                            enableShadow: false
+                        }
                         color: Colors.overBackground
                     }
                     HelperButton {
@@ -847,6 +862,7 @@ Item {
                         wrapMode: Text.Wrap
                     }
                     TextArea {
+                        id: manualInstallCommand
                         Layout.fillWidth: true
                         Layout.preferredHeight: 62
                         visible: !KdeConnectService.installPlan.automatic && (KdeConnectService.installPlan.command ?? "").length > 0
@@ -855,7 +871,11 @@ Item {
                         text: KdeConnectService.installPlan.command ?? ""
                         wrapMode: TextEdit.WrapAnywhere
                         Accessible.name: I18n.t("kde_connect_helper.manual_instruction")
-                        background: StyledRect { variant: "common"; radius: Styling.radius(-4); enableShadow: false }
+                        background: StyledRect {
+                            variant: manualInstallCommand.activeFocus ? "focus" : "internalbg"
+                            radius: Styling.radius(-4)
+                            enableShadow: false
+                        }
                         color: Colors.overBackground
                     }
                     Text {

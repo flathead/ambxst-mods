@@ -94,7 +94,11 @@ Singleton {
         case "hideKdeConnectTrayIcon": hideKdeConnectTrayIcon = !!value; break;
         case "ringThickness": ringThickness = Math.max(1, Math.min(6, Number(value) || 3)); break;
         case "ringColor": ringColor = validColor(value, "#66bb6a"); break;
-        case "lowBatteryThreshold": lowBatteryThreshold = Math.max(0, Math.min(50, Number(value) || 20)); break;
+        case "lowBatteryThreshold": {
+            const threshold = Number(value);
+            lowBatteryThreshold = Math.max(0, Math.min(50, Number.isFinite(threshold) ? threshold : 20));
+            break;
+        }
         case "lowBatteryColor": lowBatteryColor = validColor(value, "#ef5350"); break;
         case "warningBatteryThreshold": warningBatteryThreshold = Math.max(lowBatteryThreshold, Math.min(90, Number(value) || 50)); break;
         case "warningBatteryColor": warningBatteryColor = validColor(value, "#fbc02d"); break;

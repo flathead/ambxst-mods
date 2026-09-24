@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.6
+
+- Show the battery percentage as the primary content whenever battery-oriented mode has battery data.
+- Repaint the battery outline when the bar orientation or connected corner geometry changes.
+- Preserve a configured zero-percent low-battery threshold instead of replacing it with the default.
+- Match popup text fields to native resting and focus surfaces.
+- Keep every settings label and description translated into English, Russian, and Spanish.
+- Close a timed-out desktop portal request and reject unsafe autostart field-code paths.
+
 ## 1.0.5
 
 - Replace the phone glyph with a percentage or lightning glyph in battery-oriented mode.

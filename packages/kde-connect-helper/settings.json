@@ -33,14 +33,14 @@
     {
       "key": "displayMode",
       "label": "Button content",
-      "description": "Choose the information shown beside the phone icon.",
+      "description": "Choose the primary content shown in the bar button.",
       "type": "enum",
       "default": "icon-status",
       "options": [
         { "label": "Icon only", "value": "icon-only" },
         { "label": "Icon and device", "value": "icon-device" },
         { "label": "Icon and status", "value": "icon-status" },
-        { "label": "Battery oriented", "value": "battery" }
+        { "label": "Percentage", "value": "battery" }
       ]
     },
     {
@@ -177,7 +177,7 @@
     {
       "key": "warningBatteryColor",
       "label": "Warning battery color",
-      "description": "Enter a hexadecimal color such as #fbc02d.",
+      "description": "Enter a hexadecimal color such as #66bb6a.",
       "type": "string",
       "default": "#fbc02d"
     }

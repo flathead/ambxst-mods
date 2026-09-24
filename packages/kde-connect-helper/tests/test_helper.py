@@ -168,16 +168,17 @@ class HelperTests(unittest.TestCase):
                 self.assertFalse(paths["service"].exists())
 
     def test_autostart_rejects_unrepresentable_daemon_path(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = pathlib.Path(directory)
-            bin_dir = root / "bin with space"
-            bin_dir.mkdir()
-            daemon = bin_dir / "kdeconnectd"
-            daemon.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-            daemon.chmod(0o755)
-            with mock.patch.dict(os.environ, {"PATH": str(bin_dir)}, clear=False):
-                with self.assertRaisesRegex(helper.CommandFailure, "autostart_path_unsafe"):
-                    helper.enable_autostart({})
+        for directory_name in ("bin with space", "bin%specifier"):
+            with self.subTest(directory_name=directory_name), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                bin_dir = root / directory_name
+                bin_dir.mkdir()
+                daemon = bin_dir / "kdeconnectd"
+                daemon.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+                daemon.chmod(0o755)
+                with mock.patch.dict(os.environ, {"PATH": str(bin_dir)}, clear=False):
+                    with self.assertRaisesRegex(helper.CommandFailure, "autostart_path_unsafe"):
+                        helper.enable_autostart({})
 
     def test_json_response_does_not_echo_sensitive_fields(self) -> None:
         response = helper.respond({"id": 9, "command": "unknown", "text": "private text", "path": "/private/file"})
@@ -237,11 +238,18 @@ class PackageIntegrationTests(unittest.TestCase):
         self.assertIn("const bottomRight = buttonBackground.bottomRightRadius", widget)
         self.assertNotIn("setLineDash", widget)
         self.assertIn("strokeFraction(context, points, value / 100)", widget)
-        self.assertIn("anchors.fill: parent\n                visible: root.showRing && root.hasBattery", widget)
+        self.assertIn(
+            "anchors.fill: parent\n                visible: root.showBatteryOutline && root.hasBattery",
+            widget,
+        )
         self.assertIn("readonly property string buttonLabel", widget)
         self.assertIn("readonly property string selectedContent", widget)
         self.assertIn('KdeConnectService.appearance === "compact"', widget)
         self.assertIn("readonly property bool batteryGlyphIsPercentage", widget)
+        self.assertIn(
+            'KdeConnectService.displayMode === "battery"\n        && batteryPercentage.length > 0',
+            widget,
+        )
         self.assertIn("? batteryPercentage", widget)
         self.assertIn("? Icons.lightning : Icons.deviceMobile", widget)
         self.assertIn('&& KdeConnectService.displayMode !== "battery"', widget)
@@ -251,6 +259,19 @@ class PackageIntegrationTests(unittest.TestCase):
         self.assertIn("id: helperButtonBackground", widget)
         self.assertIn("color: helperButtonBackground.item", widget)
         self.assertIn("control.danger ? Colors.red : helperButtonBackground.item", widget)
+        self.assertIn("function onStartRadiusChanged()", widget)
+        self.assertIn("function onEndRadiusChanged()", widget)
+        self.assertIn("function onVerticalChanged()", widget)
+        self.assertIn(
+            'variant: shareText.hovered || shareText.activeFocus ? "focus" : "internalbg"',
+            widget,
+        )
+
+    def test_zero_low_battery_threshold_remains_valid(self) -> None:
+        service = (PACKAGE / "payload/modules/services/KdeConnectService.qml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("Number.isFinite(threshold) ? threshold : 20", service)
 
     def test_tray_setting_hides_only_kde_connect_items(self) -> None:
         feature_patch = (PACKAGE / "patches/feature.patch").read_text(encoding="utf-8")
@@ -273,6 +294,7 @@ class PackageIntegrationTests(unittest.TestCase):
         self.assertIn('I18n.t("kde_connect_helper.choose_file")', widget)
         self.assertIn('"org.freedesktop.portal.FileChooser"', helper_source)
         self.assertIn('"multiple": dbus.Boolean(True)', helper_source)
+        self.assertIn('request_object.Close(dbus_interface="org.freedesktop.portal.Request")', helper_source)
 
     def test_mod_text_fields_have_a_distinct_resting_surface(self) -> None:
         feature_patch = (PACKAGE / "patches/feature.patch").read_text(encoding="utf-8")

@@ -415,6 +415,12 @@ def choose_files(request: dict[str, Any]) -> dict[str, Any]:
     loop.run()
     if result["received"]:
         GLib.source_remove(timeout_id)
+    else:
+        try:
+            request_object.Close(dbus_interface="org.freedesktop.portal.Request")
+        except dbus.DBusException:
+            pass
+        raise CommandFailure("operation_timeout")
     if result["response"] != 0:
         return {"paths": []}
     paths = []
@@ -573,7 +579,7 @@ def enable_autostart(request: dict[str, Any]) -> dict[str, Any]:
     daemon = executable("kdeconnectd")
     if not daemon:
         raise CommandFailure("daemon_executable_missing")
-    if any(character.isspace() for character in daemon):
+    if any(character.isspace() for character in daemon) or "%" in daemon:
         raise CommandFailure("autostart_path_unsafe")
     paths = autostart_paths()
     require_owned_or_missing(paths["mask"])
