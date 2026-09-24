@@ -31,6 +31,11 @@ OWNER_MARKER = "# Managed by Ambxst KDE Connect helper"
 DEVICE_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 MAX_CAPTURE = 65536
 MAX_TEXT = 4096
+PRIVILEGED_EXECUTABLES = {
+    "pkexec": ("/usr/bin/pkexec",),
+    "pacman": ("/usr/bin/pacman",),
+    "dnf": ("/usr/bin/dnf", "/usr/bin/dnf5"),
+}
 
 
 def stable_environment() -> dict[str, str]:
@@ -61,6 +66,26 @@ def executable(name: str) -> str:
     return str(path)
 
 
+def privileged_executable(name: str) -> str:
+    for candidate in PRIVILEGED_EXECUTABLES.get(name, ()):
+        path = pathlib.Path(candidate)
+        try:
+            resolved = path.resolve(strict=True)
+            parent = resolved.parent.stat()
+            metadata = resolved.stat()
+        except OSError:
+            continue
+        if (
+            resolved.is_file()
+            and os.access(resolved, os.X_OK)
+            and metadata.st_uid == 0
+            and parent.st_uid == 0
+            and parent.st_mode & 0o022 == 0
+        ):
+            return str(resolved)
+    return ""
+
+
 def run_bounded(
     argv: list[str], timeout: float = 8.0, input_text: str | None = None,
     capture: bool = True,
@@ -75,7 +100,7 @@ def run_bounded(
             stderr=stderr_file if capture else subprocess.DEVNULL,
             text=True,
             env=stable_environment(),
-            preexec_fn=limit_output_files,
+            preexec_fn=limit_output_files if capture else None,
         )
         try:
             if input_text is not None and process.stdin is not None:
@@ -405,8 +430,8 @@ def install_plan(request: dict[str, Any]) -> dict[str, Any]:
         family, manager, package, instruction = "fedora", "dnf", "kde-connect", "dnf"
     elif distro_id == "nixos" or "nixos" in like:
         family, manager, package, instruction = "nixos", "nixos", "kdePackages.kdeconnect-kde", "nixos"
-    manager_path = executable(manager) if manager in {"pacman", "dnf"} else ""
-    pkexec = executable("pkexec")
+    manager_path = privileged_executable(manager) if manager in {"pacman", "dnf"} else ""
+    pkexec = privileged_executable("pkexec")
     return {
         "distribution": values.get("PRETTY_NAME", values.get("NAME", ""))[:160],
         "distributionId": distro_id,
@@ -437,8 +462,8 @@ def install(request: dict[str, Any]) -> dict[str, Any]:
         raise CommandFailure("install_manual_only")
     if str(request.get("family", "")) != plan["family"]:
         raise CommandFailure("install_plan_changed")
-    pkexec = executable("pkexec")
-    manager = executable(str(plan["manager"]))
+    pkexec = privileged_executable("pkexec")
+    manager = privileged_executable(str(plan["manager"]))
     if not pkexec or not manager:
         raise CommandFailure("pkexec_missing")
     argv = (

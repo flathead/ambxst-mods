@@ -124,8 +124,10 @@ Singleton {
         request.command = command;
         activeRequest = request;
         operation = command;
-        messageCode = "";
-        messageError = false;
+        if (command !== "scan") {
+            messageCode = "";
+            messageError = false;
+        }
         busy = command !== "scan" && command !== "install_plan";
         scanning = command === "scan";
         installPlanBusy = command === "install_plan";

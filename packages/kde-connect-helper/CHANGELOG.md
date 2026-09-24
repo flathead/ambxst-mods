@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.2
+
+- Keep the helper button at its intended size when loaded into horizontal or vertical bars.
+- Match Ambxst bar controls for background, hover feedback, active colors, radii, and popup anchoring.
+- Give native mod settings fields distinct resting, hover, and focus surfaces.
+- Keep action results visible after the follow-up status scan.
+- Explain when the daemon executable is missing.
+- Prevent package installation from inheriting the command-output file limit.
+- Restrict privileged package installation to fixed, root-owned system executables.
+
 ## 1.0.1
 
 - Show readable English settings before the mod is enabled.

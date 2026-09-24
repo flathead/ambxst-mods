@@ -56,8 +56,10 @@ Item {
         && KdeConnectService.appearance === "detailed"
         && KdeConnectService.displayMode !== "icon-only"
 
-    Layout.preferredWidth: vertical ? 36 : (expandedButton ? 148 : (showPercent && hasBattery ? 48 : 36))
-    Layout.preferredHeight: vertical && expandedButton ? 92 : 36
+    implicitWidth: vertical ? 36 : (expandedButton ? 148 : (showPercent && hasBattery ? 48 : 36))
+    implicitHeight: 36
+    Layout.preferredWidth: implicitWidth
+    Layout.preferredHeight: implicitHeight
     Layout.fillWidth: vertical
     Layout.fillHeight: !vertical
     visible: KdeConnectService.shouldShowButton
@@ -155,14 +157,31 @@ Item {
         Accessible.description: root.statusText
         onClicked: root.openPrimary()
 
+        HoverHandler {
+            cursorShape: Qt.PointingHandCursor
+        }
+
         background: StyledRect {
             id: buttonBackground
-            variant: helperPopup.isOpen ? "primary" : (barButton.hovered || barButton.activeFocus ? "focus" : "bg")
+            variant: helperPopup.isOpen ? "primary" : "bg"
             enableShadow: root.layerEnabled
             topLeftRadius: root.vertical ? root.startRadius : root.startRadius
             topRightRadius: root.vertical ? root.startRadius : root.endRadius
             bottomLeftRadius: root.vertical ? root.endRadius : root.startRadius
             bottomRightRadius: root.vertical ? root.endRadius : root.endRadius
+
+            Rectangle {
+                anchors.fill: parent
+                color: Styling.srItem("overprimary")
+                opacity: helperPopup.isOpen ? 0
+                    : (barButton.down ? 0.5 : (barButton.hovered || barButton.activeFocus ? 0.25 : 0))
+                radius: parent.radius ?? 0
+
+                Behavior on opacity {
+                    enabled: Config.animDuration > 0
+                    NumberAnimation { duration: Config.animDuration / 2 }
+                }
+            }
         }
 
         contentItem: RowLayout {
@@ -213,7 +232,12 @@ Item {
                     font.family: root.showPercent && root.hasBattery ? Styling.defaultFont : Icons.font
                     font.pixelSize: root.showPercent && root.hasBattery ? Styling.fontSize(-2) : 17
                     font.bold: root.showPercent && root.hasBattery
-                    color: helperPopup.isOpen ? buttonBackground.item : Colors.overBackground
+                    color: helperPopup.isOpen ? buttonBackground.item : Styling.srItem("overprimary")
+
+                    Behavior on color {
+                        enabled: Config.animDuration > 0
+                        ColorAnimation { duration: Config.animDuration / 2 }
+                    }
                 }
             }
 
@@ -221,12 +245,17 @@ Item {
                 visible: root.expandedButton && !KdeConnectService.hideKdeConnectLabel
                 Layout.preferredWidth: 105
                 text: root.barDetail
-                color: helperPopup.isOpen ? buttonBackground.item : Colors.overBackground
+                color: helperPopup.isOpen ? buttonBackground.item : Styling.srItem("overprimary")
                 font.family: Styling.defaultFont
                 font.pixelSize: Styling.fontSize(-1)
                 elide: Text.ElideRight
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignVCenter
+
+                Behavior on color {
+                    enabled: Config.animDuration > 0
+                    ColorAnimation { duration: Config.animDuration / 2 }
+                }
             }
         }
 
@@ -239,7 +268,7 @@ Item {
 
     BarPopup {
         id: helperPopup
-        anchorItem: barButton
+        anchorItem: buttonBackground
         bar: root.bar
         contentWidth: Math.max(280, Math.min(336, (root.bar?.screen?.width ?? 384) - 48))
         contentHeight: installModal.visible
@@ -249,6 +278,8 @@ Item {
         onIsOpenChanged: {
             if (isOpen)
                 Qt.callLater(() => refreshButton.forceActiveFocus());
+            else
+                Qt.callLater(() => barButton.forceActiveFocus());
         }
 
         Flickable {
@@ -372,6 +403,18 @@ Item {
                     labelText: I18n.t("kde_connect_helper.start_daemon")
                     enabled: KdeConnectService.daemonExecutable.length > 0 && !KdeConnectService.activeRequest
                     onClicked: KdeConnectService.startDaemon()
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: KdeConnectService.installed && !KdeConnectService.daemonRunning
+                        && KdeConnectService.daemonExecutable.length === 0
+                    text: I18n.t("kde_connect_helper.message.daemon_executable_missing")
+                    color: Colors.overBackground
+                    opacity: 0.65
+                    font.family: Styling.defaultFont
+                    font.pixelSize: Styling.fontSize(-2)
+                    wrapMode: Text.Wrap
                 }
 
                 HelperButton {
@@ -630,6 +673,8 @@ Item {
             onVisibleChanged: {
                 if (visible)
                     Qt.callLater(() => installCancel.forceActiveFocus());
+                else if (helperPopup.isOpen)
+                    Qt.callLater(() => refreshButton.forceActiveFocus());
             }
             Keys.onEscapePressed: visible = false
             Rectangle { anchors.fill: parent; color: Colors.scrim; opacity: 0.55 }
@@ -772,6 +817,8 @@ Item {
             onVisibleChanged: {
                 if (visible)
                     Qt.callLater(() => confirmCancel.forceActiveFocus());
+                else if (helperPopup.isOpen)
+                    Qt.callLater(() => refreshButton.forceActiveFocus());
             }
             Keys.onEscapePressed: visible = false
             Rectangle { anchors.fill: parent; color: Colors.scrim; opacity: 0.55 }
@@ -837,6 +884,10 @@ Item {
             if (!helperPopup.isOpen)
                 helperPopup.open();
             confirmModal.visible = true;
+        }
+        onRejected: {
+            if (helperPopup.isOpen)
+                Qt.callLater(() => refreshButton.forceActiveFocus());
         }
     }
 

@@ -95,6 +95,21 @@ class HelperTests(unittest.TestCase):
         )
         self.assertLessEqual(len(stdout.encode("utf-8")), helper.MAX_CAPTURE)
 
+    def test_non_captured_process_does_not_inherit_capture_file_limit(self) -> None:
+        process = mock.Mock()
+        process.returncode = 0
+        with mock.patch.object(helper.subprocess, "Popen", return_value=process) as popen:
+            helper.run_bounded(["/usr/bin/true"], capture=False)
+        self.assertIsNone(popen.call_args.kwargs["preexec_fn"])
+
+    def test_privileged_discovery_ignores_path_injection(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            fake = pathlib.Path(directory) / "pkexec"
+            fake.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            fake.chmod(0o755)
+            with mock.patch.dict(os.environ, {"PATH": directory}, clear=False):
+                self.assertNotEqual(helper.privileged_executable("pkexec"), str(fake))
+
     def test_autostart_only_removes_owned_files(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
@@ -183,6 +198,46 @@ class HelperTests(unittest.TestCase):
         with mock.patch.object(helper, "dbus", binding):
             helper.private_dbus_call("/fixture/share", "fixture.interface", "shareText", "private text")
         method.assert_called_once_with("private text", timeout=5)
+
+
+class PackageIntegrationTests(unittest.TestCase):
+    def test_bar_widget_exports_loader_dimensions(self) -> None:
+        widget = (PACKAGE / "payload/modules/bar/KdeConnectHelper.qml").read_text(encoding="utf-8")
+        feature_patch = (PACKAGE / "patches/feature.patch").read_text(encoding="utf-8")
+        self.assertIn("implicitWidth: vertical ? 36", widget)
+        self.assertIn("implicitHeight: 36", widget)
+        self.assertEqual(feature_patch.count("Layout.preferredWidth: active ?"), 4)
+        self.assertEqual(feature_patch.count("Layout.preferredHeight: active ?"), 4)
+
+    def test_bar_widget_uses_native_ambxst_states(self) -> None:
+        widget = (PACKAGE / "payload/modules/bar/KdeConnectHelper.qml").read_text(encoding="utf-8")
+        self.assertIn('variant: helperPopup.isOpen ? "primary" : "bg"', widget)
+        self.assertIn('color: Styling.srItem("overprimary")', widget)
+        self.assertIn("barButton.hovered || barButton.activeFocus", widget)
+        self.assertIn("anchorItem: buttonBackground", widget)
+
+    def test_mod_text_fields_have_a_distinct_resting_surface(self) -> None:
+        feature_patch = (PACKAGE / "patches/feature.patch").read_text(encoding="utf-8")
+        self.assertIn('sourceInput.activeFocus ? 2 : 0', feature_patch)
+        self.assertIn('settingInput.activeFocus ? 2 : 0', feature_patch)
+        self.assertIn(
+            'variant: sourceInput.hovered || sourceInput.activeFocus ? "focus" : "internalbg"',
+            feature_patch,
+        )
+        self.assertIn(
+            'variant: settingInput.hovered || settingInput.activeFocus ? "focus" : "internalbg"',
+            feature_patch,
+        )
+
+    def test_follow_up_scan_keeps_action_feedback(self) -> None:
+        service = (PACKAGE / "payload/modules/services/KdeConnectService.qml").read_text(
+            encoding="utf-8"
+        )
+        widget = (PACKAGE / "payload/modules/bar/KdeConnectHelper.qml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('if (command !== "scan")', service)
+        self.assertIn('kde_connect_helper.message.daemon_executable_missing', widget)
 
 
 if __name__ == "__main__":

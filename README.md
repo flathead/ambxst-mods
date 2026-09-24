@@ -75,7 +75,8 @@ system configuration files.
 Autostart prefers a marked user systemd service and falls back to a marked XDG
 autostart entry. Disabling it removes only files owned by the mod. External
 commands use validated executable paths and argument arrays without shell
-evaluation. Output is bounded, device identifiers are validated, operations
+evaluation. Privileged installation accepts only fixed, root-owned system
+executables. Output is bounded, device identifiers are validated, operations
 time out, and sharing requires confirmation.
 
 ## Languages and release metadata
@@ -92,8 +93,9 @@ languages.
 
 Language metadata describes the implementation; it does not install translations.
 These packages use base dictionaries, so they do not declare standalone resource
-files. They configure existing Ambxst settings directly and do not provide a
-separate mod settings schema. None depends on another mod.
+files. KDE Connect helper provides a native mod settings schema. The other
+packages configure existing Ambxst settings directly. None depends on another
+mod.
 
 The packages are active and declare `deprecated: false`. A retired release should
 set `deprecated: true` and explain removal in `deprecated_reason`. Do not mark a
