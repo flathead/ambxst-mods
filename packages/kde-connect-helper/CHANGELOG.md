@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.5
+
+- Replace the phone glyph with a percentage or lightning glyph in battery-oriented mode.
+- Keep compact battery-oriented buttons at the native 36-pixel size.
+
 ## 1.0.4
 
 - Follow the bar button's actual four-corner geometry with the battery progress outline.

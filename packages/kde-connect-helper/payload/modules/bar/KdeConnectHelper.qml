@@ -42,25 +42,28 @@ Item {
     readonly property string statusText: statusKey === "connected_count"
         ? I18n.t("kde_connect_helper.status.connected_count", KdeConnectService.connectedDevices.length)
         : I18n.t("kde_connect_helper.status." + statusKey)
-    readonly property string batteryLabel: showPercent && hasBattery
+    readonly property string batteryPercentage: hasBattery
         ? Math.round(device.battery) + "%" : ""
+    readonly property bool batteryGlyphIsPercentage: KdeConnectService.displayMode === "battery"
+        && showPercent && batteryPercentage.length > 0
+    readonly property string mainGlyph: batteryGlyphIsPercentage
+        ? batteryPercentage
+        : (KdeConnectService.displayMode === "battery" ? Icons.lightning : Icons.deviceMobile)
     readonly property string selectedContent: {
         if (KdeConnectService.displayMode === "icon-device")
             return device?.name ?? I18n.t("kde_connect_helper.no_device");
         if (KdeConnectService.displayMode === "icon-status")
             return statusText;
         if (KdeConnectService.displayMode === "battery")
-            return batteryLabel.length > 0 ? batteryLabel : statusText;
+            return "";
         return "";
     }
     readonly property string detailedContent: {
         if (KdeConnectService.displayMode === "battery" && device) {
-            if (batteryLabel.length > 0)
-                return device.name + " · " + batteryLabel;
-            return device.name + " · " + statusText;
+            return device.name;
         }
-        if (selectedContent.length > 0 && batteryLabel.length > 0)
-            return selectedContent + " · " + batteryLabel;
+        if (selectedContent.length > 0 && showPercent && batteryPercentage.length > 0)
+            return selectedContent + " · " + batteryPercentage;
         return selectedContent;
     }
     readonly property bool expandedButton: !vertical
@@ -71,14 +74,14 @@ Item {
         if (expandedButton)
             return detailedContent;
         if (!vertical && KdeConnectService.appearance === "compact"
-                && KdeConnectService.displayMode !== "icon-only")
+                && KdeConnectService.displayMode !== "icon-only"
+                && KdeConnectService.displayMode !== "battery")
             return selectedContent;
         return "";
     }
     readonly property bool compactLabel: !expandedButton && buttonLabel.length > 0
 
-    implicitWidth: vertical ? 36 : (expandedButton ? 148
-        : (compactLabel ? (KdeConnectService.displayMode === "battery" ? 72 : 112) : 36))
+    implicitWidth: vertical ? 36 : (expandedButton ? 148 : (compactLabel ? 112 : 36))
     implicitHeight: 36
     Layout.preferredWidth: implicitWidth
     Layout.preferredHeight: implicitHeight
@@ -324,9 +327,10 @@ Item {
 
                 Text {
                     anchors.centerIn: parent
-                    text: Icons.deviceMobile
-                    font.family: Icons.font
-                    font.pixelSize: 17
+                    text: root.mainGlyph
+                    font.family: root.batteryGlyphIsPercentage ? Styling.defaultFont : Icons.font
+                    font.pixelSize: root.batteryGlyphIsPercentage ? Styling.fontSize(-2) : 17
+                    font.bold: root.batteryGlyphIsPercentage
                     color: helperPopup.isOpen ? buttonBackground.item : Styling.srItem("overprimary")
 
                     Behavior on color {
@@ -338,8 +342,7 @@ Item {
 
             Text {
                 visible: root.buttonLabel.length > 0
-                Layout.preferredWidth: root.expandedButton ? 105
-                    : (KdeConnectService.displayMode === "battery" ? 32 : 72)
+                Layout.preferredWidth: root.expandedButton ? 105 : 72
                 text: root.buttonLabel
                 color: helperPopup.isOpen ? buttonBackground.item : Styling.srItem("overprimary")
                 font.family: Styling.defaultFont
