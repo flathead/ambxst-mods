@@ -2481,7 +2481,7 @@ index 18082e7d..998d17a5 100644
                          Layout.preferredHeight: width
 +                        onOpenCalendarSettings: {
 +                            GlobalStates.settingsWindowVisible = true;
-+                            Qt.callLater(() => { GlobalStates.settingsCurrentTab = 9; });
++                            Qt.callLater(() => { GlobalStates.settingsCurrentTab = ModsService.settingsMenuPosition("community.calendar-integration"); });
 +                        }
 +                        onDaySelected: (d, m, y) => {
 +                            calDay = d;
