@@ -893,41 +893,68 @@ index f14ab811..def2c20e 100644
      onMonitoringActiveChanged: {
          if (monitoringActive) activateMonitor();
 diff --git a/modules/widgets/dashboard/Dashboard.qml b/modules/widgets/dashboard/Dashboard.qml
-index 6b60935c..6c1e633f 100644
+index 6b60935c..dec690fb 100644
 --- a/modules/widgets/dashboard/Dashboard.qml
 +++ b/modules/widgets/dashboard/Dashboard.qml
-@@ -23,8 +23,18 @@ NotchAnimationBehavior {
-         property int currentTab: GlobalStates.dashboardCurrentTab
-     }
- 
--    readonly property var tabModel: [Icons.widgets, Icons.wallpapers, Icons.heartbeat]
-+    readonly property bool resourcesInDashboard: !(Config.system.resources && Config.system.resources.location === "bar")
-+    readonly property var tabModel: {
-+        let m = [Icons.widgets, Icons.wallpapers];
-+        if (root.resourcesInDashboard) m.push(Icons.heartbeat);
-+        return m;
-+    }
+@@ -27,6 +27,41 @@ NotchAnimationBehavior {
      readonly property int tabCount: tabModel.length
-+
-+    onResourcesInDashboardChanged: {
-+        if (!resourcesInDashboard && root.state.currentTab === 2)
-+            stack.navigateToTab(0);
-+    }
      readonly property int tabSpacing: 8
  
++    // Bar resource monitor: while resources are shown in the bar, the Metrics
++    // tab (index 2) keeps its slot so later tabs keep their indices, but it is
++    // hidden, not loaded, and skipped by tab navigation.
++    readonly property bool metricsTabHidden: (Config.system.resources?.location ?? "dashboard") === "bar"
++    property int lastVisibleTab: 0
++
++    function skipHiddenMetricsTab() {
++        const current = root.state.currentTab;
++        if (!root.metricsTabHidden || current !== 2) {
++            root.lastVisibleTab = current;
++            return;
++        }
++        let target = root.lastVisibleTab > 2 ? 1 : 3;
++        if (target >= root.tabCount)
++            target = 1;
++        Qt.callLater(() => stack.navigateToTab(target));
++    }
++
++    onMetricsTabHiddenChanged: skipHiddenMetricsTab()
++
++    Connections {
++        target: root.state
++        function onCurrentTabChanged() {
++            root.skipHiddenMetricsTab();
++        }
++    }
++
++    Connections {
++        target: root
++        function onIsVisibleChanged() {
++            if (root.isVisible)
++                root.skipHiddenMetricsTab();
++        }
++    }
++
      readonly property int tabWidth: 48
-@@ -455,9 +465,10 @@ NotchAnimationBehavior {
-                     z: visible ? 1 : 0
-                 }
+     readonly property real nonAnimWidth: (state.currentTab === 0 ? 600 : 400) + tabWidth + 16 // unified launcher tab is wider
  
--                // Tab 2: Metrics
-+                // Tab 2: Metrics (only when resources are displayed in dashboard, not bar)
+@@ -255,6 +290,8 @@ NotchAnimationBehavior {
+                         flat: true
+                         width: tabsContainer.width
+                         height: width
++                        enabled: !(index === 2 && root.metricsTabHidden)
++                        opacity: enabled ? 1 : 0
+                         // implicitHeight: (tabsContainer.height - root.tabSpacing * (root.tabCount - 1)) / root.tabCount
+ 
+                         background: Rectangle {
+@@ -459,6 +496,7 @@ NotchAnimationBehavior {
                  TabLoader {
                      property int index: 2
-+                    active: (root.shouldTabBeLoaded(index) || root.state.currentTab === index) && root.resourcesInDashboard
                      sourceComponent: metricsComponent
++                    active: !root.metricsTabHidden && root.shouldTabBeLoaded(index)
                      z: visible ? 1 : 0
                  }
+                 
 diff --git a/modules/widgets/dashboard/controls/SystemPanel.qml b/modules/widgets/dashboard/controls/SystemPanel.qml
 index dc1cc0ba..e99170dd 100644
 --- a/modules/widgets/dashboard/controls/SystemPanel.qml
