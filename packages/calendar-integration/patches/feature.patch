@@ -1,5 +1,5 @@
 diff --git a/config/Config.qml b/config/Config.qml
-index ab5ce35c..8d384444 100644
+index ab5ce35c..67bbbc9a 100644
 --- a/config/Config.qml
 +++ b/config/Config.qml
 @@ -22,6 +22,7 @@ import "defaults/system.js" as SystemDefaults
@@ -88,24 +88,6 @@ index ab5ce35c..8d384444 100644
      // Keybinds (binds.json)
      // Timer to repair keybinds after initial load
      Timer {
-@@ -1281,7 +1335,7 @@ Singleton {
-             if (current.ambxst.dashboard && typeof current.ambxst.dashboard === "object" && !current.ambxst.dashboard.modifiers) {
-                 console.log("Migrating nested ambxst binds to flat structure...");
-                 const nested = current.ambxst.dashboard;
--                
-+
-                 // Map old names to new names and update arguments
-                 if (nested.widgets) {
-                     current.ambxst.launcher = nested.widgets;
-@@ -3491,7 +3545,7 @@ Singleton {
-                 // Trigger save
-                 GlobalStates.markShellChanged();
-             }
--        } 
-+        }
-         // If notch moves top
-         else if (notchPosition === "top") {
-             // Restore Dock if displaced
 @@ -3542,6 +3596,9 @@ Singleton {
      // General configuration
      property QtObject general: generalLoader.adapter
@@ -126,32 +108,6 @@ index ab5ce35c..8d384444 100644
  
      // Color helpers
      function isHexColor(colorValue) {
-@@ -3599,20 +3659,20 @@ Singleton {
- 
-     function resolveColor(colorValue) {
-         if (!colorValue) return "transparent"; // Fallback
--        
-+
-         if (isHexColor(colorValue)) {
-             return colorValue;
-         }
--        
-+
-         // Check Colors singleton
-         if (typeof Colors === 'undefined' || !Colors) return "transparent";
--        
--        return Colors[colorValue] || "transparent"; 
-+
-+        return Colors[colorValue] || "transparent";
-     }
- 
-     function resolveColorWithOpacity(colorValue, opacity) {
-         if (!colorValue) return Qt.rgba(0,0,0,0);
--        
-+
-         const color = isHexColor(colorValue) ? Qt.color(colorValue) : (Colors[colorValue] || Qt.color("transparent"));
-         return Qt.rgba(color.r, color.g, color.b, opacity);
-     }
 diff --git a/config/defaults/calendar.js b/config/defaults/calendar.js
 new file mode 100644
 index 00000000..c226de17
@@ -585,61 +541,9 @@ index 00000000..0c695325
 +    }
 +}
 diff --git a/modules/bar/BarContent.qml b/modules/bar/BarContent.qml
-index 9d43848a..42d1f0de 100644
+index 9d43848a..2c64686f 100644
 --- a/modules/bar/BarContent.qml
 +++ b/modules/bar/BarContent.qml
-@@ -87,7 +87,7 @@ Item {
-     readonly property bool notchHoverActive: {
-         if (barPosition !== notchPosition)
-             return false;
--        
-+
-         if (notchPanelRef) {
-             // UnifiedShellPanel exposes 'notchHoverActive' property alias pointing to notchContent.hoverActive
-             // We need to check if that property exists on the panel object
-@@ -168,7 +168,7 @@ Item {
-                 return "end";
-             return "center";
-         }
--        
-+
-         // Vertical always falls back to center logic inside the column but we treat it as appended to group
-         return "center";
-     }
-@@ -188,16 +188,16 @@ Item {
- 
-     readonly property int contentImplicitWidth: orientation === "horizontal" ? (horizontalLoader.item && horizontalLoader.item.implicitWidth !== undefined ? horizontalLoader.item.implicitWidth : 0) : (verticalLoader.item && verticalLoader.item.implicitWidth !== undefined ? verticalLoader.item.implicitWidth : 0)
-     readonly property int contentImplicitHeight: orientation === "horizontal" ? (horizontalLoader.item && horizontalLoader.item.implicitHeight !== undefined ? horizontalLoader.item.implicitHeight : 0) : (verticalLoader.item && verticalLoader.item.implicitHeight !== undefined ? verticalLoader.item.implicitHeight : 0)
--    
-+
-     readonly property int barTargetWidth: orientation === "vertical" ? (contentImplicitWidth + 2 * barPadding) : 0
-     readonly property int barTargetHeight: orientation === "horizontal" ? (contentImplicitHeight + 2 * barPadding) : 0
- 
-     readonly property bool actualContainBar: (Config.bar && Config.bar.containBar !== undefined ? Config.bar.containBar : false) && (Config.bar && Config.bar.frameEnabled !== undefined ? Config.bar.frameEnabled : false)
--    readonly property int totalBarWidth: barTargetWidth + 
-+    readonly property int totalBarWidth: barTargetWidth +
-         ((root.barPosition === "left" || root.orientation === "horizontal") ? (root.frameOffset + root.leftOuterMargin) : 0) +
-         ((root.barPosition === "right" || root.orientation === "horizontal") ? (root.frameOffset + root.rightOuterMargin) : 0)
- 
--    readonly property int totalBarHeight: barTargetHeight + 
-+    readonly property int totalBarHeight: barTargetHeight +
-         ((root.barPosition === "top" || root.orientation === "vertical") ? (root.frameOffset + root.topOuterMargin) : 0) +
-         ((root.barPosition === "bottom" || root.orientation === "vertical") ? (root.frameOffset + root.bottomOuterMargin) : 0)
- 
-@@ -415,11 +415,11 @@ Item {
-                                     id: pinButtonBg
-                                     variant: root.pinned ? "primary" : "bg"
-                                     enableShadow: root.shadowsEnabled
--                                    
-+
-                                     // PinButton is typically last in group 1 (unless IntegratedDock follows at start)
-                                     property real startRadius: root.innerRadius
-                                     property real endRadius: root.dockAtStart ? root.innerRadius : root.outerRadius
--                                    
-+
-                                     topLeftRadius: startRadius
-                                     bottomLeftRadius: startRadius
-                                     topRightRadius: endRadius
 @@ -550,6 +550,19 @@ Item {
                              endRadius: root.innerRadius
                          }
@@ -660,41 +564,6 @@ index 9d43848a..42d1f0de 100644
                          Clock {
                              id: clockComponent
                              bar: root
-@@ -659,21 +672,21 @@ Item {
-                                     active: (Config.bar && Config.bar.showPinButton !== undefined ? Config.bar.showPinButton : true)
-                                     visible: active
-                                     Layout.alignment: Qt.AlignHCenter
--                            
-+
-                                     sourceComponent: Button {
-                                         id: pinButtonV
-                                         implicitWidth: 36
-                                         implicitHeight: 36
--                            
-+
-                                         background: StyledRect {
-                                             id: pinButtonVBg
-                                             variant: root.pinned ? "primary" : "bg"
-                                             enableShadow: root.shadowsEnabled
--                                        
-+
-                                             property real startRadius: root.innerRadius
-                                             // In vertical, dock is always appended to this group if enabled
-                                             property real endRadius: root.integratedDockEnabled ? root.innerRadius : root.outerRadius
--                                        
-+
-                                             topLeftRadius: startRadius
-                                             topRightRadius: startRadius
-                                             bottomLeftRadius: endRadius
-@@ -735,7 +748,7 @@ Item {
-                                 Layout.fillHeight: true
-                                 Layout.fillWidth: true
-                                 enableShadow: root.shadowsEnabled
--                                
-+
-                                 startRadius: root.innerRadius
-                                 endRadius: root.outerRadius
-                             }
 @@ -757,6 +770,20 @@ Item {
                              endRadius: root.innerRadius
                          }
@@ -716,6 +585,19 @@ index 9d43848a..42d1f0de 100644
                          Clock {
                              id: clockComponentVert
                              bar: root
+diff --git a/modules/globals/GlobalStates.qml b/modules/globals/GlobalStates.qml
+index eb6e9ccd..b093572b 100644
+--- a/modules/globals/GlobalStates.qml
++++ b/modules/globals/GlobalStates.qml
+@@ -255,6 +255,8 @@ Singleton {
+     property bool settingsWindowVisible: false
+     property int settingsTargetWorkspaceId: 0
+     property string settingsTargetScreenName: ""
++    // Calendar integration: open System > Calendar when Settings shows System
++    property bool calendarSettingsRequested: false
+ 
+     // Theme editor state - persists across tab switches
+     property bool themeHasChanges: false
 diff --git a/modules/services/CalendarService.qml b/modules/services/CalendarService.qml
 new file mode 100644
 index 00000000..33c11d6f
@@ -1062,10 +944,10 @@ index 3333506c..5dbbabf9 100644
      readonly property string alarm: ""
 diff --git a/modules/widgets/dashboard/controls/CalendarPanel.qml b/modules/widgets/dashboard/controls/CalendarPanel.qml
 new file mode 100644
-index 00000000..0e396997
+index 00000000..e986ff42
 --- /dev/null
 +++ b/modules/widgets/dashboard/controls/CalendarPanel.qml
-@@ -0,0 +1,1279 @@
+@@ -0,0 +1,1285 @@
 +pragma ComponentBehavior: Bound
 +
 +import QtQuick
@@ -1084,6 +966,9 @@ index 00000000..0e396997
 +    readonly property real sideMargin: (width - contentWidth) / 2
 +
 +    property string currentSection: ""
++
++    // The panel is shown inside System; the top-level Back returns there
++    signal backRequested()
 +
 +    // i18n helper — works with or without the I18n singleton
 +    function _t(key, fallback) {
@@ -1238,13 +1123,16 @@ index 00000000..0e396997
 +
 +                    actions: {
 +                        let acts = [];
-+                        if (root.currentSection !== "") {
-+                            acts.push({
-+                                icon: Icons.arrowLeft,
-+                                tooltip: root._t("calendar.panel.back", "Back"),
-+                                onClicked: function() { root.currentSection = ""; }
-+                            });
-+                        }
++                        acts.push({
++                            icon: Icons.arrowLeft,
++                            tooltip: root._t("calendar.panel.back", "Back"),
++                            onClicked: function() {
++                                if (root.currentSection !== "")
++                                    root.currentSection = "";
++                                else
++                                    root.backRequested();
++                            }
++                        });
 +                        if (CalendarService.hasAccounts) {
 +                            acts.push({
 +                                icon: Icons.sync,
@@ -2346,99 +2234,81 @@ index 00000000..0e396997
 +    }
 +}
 diff --git a/modules/widgets/dashboard/controls/SettingsIndex.qml b/modules/widgets/dashboard/controls/SettingsIndex.qml
-index 0ef76170..e55ce021 100644
+index 0ef76170..d11125a4 100644
 --- a/modules/widgets/dashboard/controls/SettingsIndex.qml
 +++ b/modules/widgets/dashboard/controls/SettingsIndex.qml
-@@ -13,7 +13,7 @@ QtObject {
- 
-     // Main Sections:
-     // 0: Network, 1: Bluetooth, 2: Mixer, 3: AI, 4: Effects, 5: Theme, 6: Binds, 7: System, 8: Compositor, 9: Ambxst, 10: Mods
--    
-+
+@@ -17,6 +17,12 @@ QtObject {
      property var dynamicItems: []
  
      readonly property var staticItems: [
-@@ -86,7 +86,7 @@ QtObject {
-         { label: I18n.t("settings.binds.lens"), keywords: "magnifier zoom shortcut", section: 5, subSection: "", subLabel: I18n.t("settings.binds") + " > " + I18n.t("settings.ambxst"), icon: Icons.magnifyingGlass, isIcon: true },
-         { label: I18n.t("settings.binds.reload"), keywords: "refresh restart shortcut", section: 5, subSection: "", subLabel: I18n.t("settings.binds") + " > " + I18n.t("settings.ambxst"), icon: Icons.arrowCounterClockwise, isIcon: true },
-         { label: I18n.t("settings.binds.quit"), keywords: "exit close shortcut", section: 5, subSection: "", subLabel: I18n.t("settings.binds") + " > " + I18n.t("settings.ambxst"), icon: Icons.signOut, isIcon: true },
--        
++        // --- System > Calendar (calendar integration mod) ---
++        { label: I18n.t("calendar.panel.title"), keywords: "events google caldav schedule sync reminder notifications", section: 7, subSection: "calendar", subLabel: I18n.t("settings.system") + " > " + I18n.t("calendar.panel.title"), icon: Icons.calendarBlank, isIcon: true },
++        { label: I18n.t("calendar.panel.section_accounts"), keywords: "calendar google caldav nextcloud connect login oauth", section: 7, subSection: "calendar", subLabel: I18n.t("settings.system") + " > " + I18n.t("calendar.panel.title"), icon: Icons.calendarBlank, isIcon: true },
++        { label: I18n.t("calendar.panel.sync_interval"), keywords: "calendar interval refresh update", section: 7, subSection: "calendar", subLabel: I18n.t("settings.system") + " > " + I18n.t("calendar.panel.title"), icon: Icons.sync, isIcon: true },
++        { label: I18n.t("calendar.panel.notifications"), keywords: "calendar reminder alert notify", section: 7, subSection: "calendar", subLabel: I18n.t("settings.system") + " > " + I18n.t("calendar.panel.title"), icon: Icons.bell, isIcon: true },
 +
-         // --- System ---
-         { label: I18n.t("settings.system"), keywords: "hardware info resources cpu ram", section: 6, subSection: "", subLabel: I18n.t("settings.system"), icon: Icons.circuitry, isIcon: true },
+         // --- Mods ---
+         { label: "Mods", keywords: "extensions plugins modifications packages", section: 10, subSection: "", subLabel: "", icon: Icons.puzzlePiece, isIcon: true },
+         { label: "Install mod", keywords: "add local directory archive git repository source", section: 10, subSection: "", subLabel: "Mods", icon: Icons.puzzlePiece, isIcon: true },
+diff --git a/modules/widgets/dashboard/controls/SystemPanel.qml b/modules/widgets/dashboard/controls/SystemPanel.qml
+index dc1cc0ba..a579def5 100644
+--- a/modules/widgets/dashboard/controls/SystemPanel.qml
++++ b/modules/widgets/dashboard/controls/SystemPanel.qml
+@@ -66,6 +66,8 @@ Item {
+     // Main content
+     Flickable {
+         id: mainFlickable
++        // Calendar integration replaces the System content with its own panel
++        visible: root.currentSection !== "calendar"
+         anchors.fill: parent
+         contentHeight: mainColumn.implicitHeight
+         clip: true
+@@ -156,6 +158,10 @@ Item {
+                             text: "Clipboard"
+                             sectionId: "clipboard"
+                         }
++                        SectionButton {
++                            text: I18n.t("settings.calendar")
++                            sectionId: "calendar"
++                        }
+                     }
  
-@@ -117,7 +117,7 @@ QtObject {
-         { label: I18n.t("settings.system.before_sleep"), keywords: "loginctl lock-session idle", section: 6, subSection: "idle", subLabel: I18n.t("settings.system") + " > " + I18n.t("settings.system.idle"), icon: Icons.moon, isIcon: true },
-         { label: I18n.t("settings.system.after_sleep"), keywords: "screen on resume idle", section: 6, subSection: "idle", subLabel: I18n.t("settings.system") + " > " + I18n.t("settings.system.idle"), icon: Icons.moon, isIcon: true },
-         { label: I18n.t("settings.system.idle_listener"), keywords: "timeout brightness screen off suspend", section: 6, subSection: "idle", subLabel: I18n.t("settings.system") + " > " + I18n.t("settings.system.idle"), icon: Icons.moon, isIcon: true },
--        
-+
-         // --- Compositor ---
-         { label: I18n.t("settings.compositor"), keywords: "compositor window manager wm", section: 7, subSection: "", subLabel: I18n.t("settings.compositor"), icon: Icons.compositor, isIcon: true },
- 
-@@ -214,7 +214,13 @@ QtObject {
-         { label: I18n.t("settings.shell.desktop_text_color"), keywords: "label font", section: 8, subSection: "desktop", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.desktop"), icon: Icons.palette, isIcon: true },
- 
-         // Ambxst > System
--        { label: I18n.t("settings.shell.system_entry"), keywords: "config settings ambxst", section: 8, subSection: "system", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.system"), icon: Icons.circuitry, isIcon: true }
-+        { label: I18n.t("settings.shell.system_entry"), keywords: "config settings ambxst", section: 8, subSection: "system", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.system"), icon: Icons.circuitry, isIcon: true },
-+
-+        // --- Calendar ---
-+        { label: I18n.t("calendar.panel.title"), keywords: "events google caldav schedule sync reminder notifications", section: 11, subSection: "", subLabel: "", icon: Icons.calendarBlank, isIcon: true },
-+        { label: I18n.t("calendar.panel.section_accounts"), keywords: "google caldav nextcloud connect login oauth", section: 11, subSection: "accounts", subLabel: I18n.t("calendar.panel.title") + " > " + I18n.t("calendar.panel.section_accounts"), icon: Icons.calendarBlank, isIcon: true },
-+        { label: I18n.t("calendar.panel.sync_interval"), keywords: "interval refresh update", section: 11, subSection: "settings", subLabel: I18n.t("calendar.panel.title") + " > " + I18n.t("calendar.panel.section_settings"), icon: Icons.sync, isIcon: true },
-+        { label: I18n.t("calendar.panel.notifications"), keywords: "reminder alert notify", section: 11, subSection: "settings", subLabel: I18n.t("calendar.panel.title") + " > " + I18n.t("calendar.panel.section_settings"), icon: Icons.bell, isIcon: true }
-     ]
- 
-     property var items: staticItems.concat(dynamicItems)
-@@ -223,7 +229,7 @@ QtObject {
-         // Simple deduplication based on label + section
-         let currentLabels = new Set(items.map(i => i.section + ":" + i.label));
-         let uniqueNew = [];
--        
-+
-         for (let i = 0; i < newItems.length; i++) {
-             let item = newItems[i];
-             let key = item.section + ":" + item.label;
-@@ -232,7 +238,7 @@ QtObject {
-                 currentLabels.add(key);
-             }
+                     // =====================
+@@ -1082,6 +1088,32 @@ Item {
          }
--        
-+
-         if (uniqueNew.length > 0) {
-             dynamicItems = dynamicItems.concat(uniqueNew);
-         }
-diff --git a/modules/widgets/dashboard/controls/SettingsTab.qml b/modules/widgets/dashboard/controls/SettingsTab.qml
-index aaef9eca..f49f56c8 100644
---- a/modules/widgets/dashboard/controls/SettingsTab.qml
-+++ b/modules/widgets/dashboard/controls/SettingsTab.qml
-@@ -261,6 +261,12 @@ Rectangle {
-             section: 10,
-             isIcon: true
-         },
-+        {
-+            icon: Icons.calendarBlank,
-+            label: I18n.t("settings.calendar"),
-+            section: 11,
-+            isIcon: true
-+        },
-         {
-             icon: Qt.resolvedUrl("../../../../assets/ambxst/ambxst-icon.svg"),
-             label: I18n.t("settings.ambxst"),
-@@ -606,6 +612,10 @@ Rectangle {
-                 {
-                     component: "ModsPanel.qml",
-                     section: 10
-+                },
-+                {
-+                    component: "CalendarPanel.qml",
-+                    section: 11
-                 }
-             ]
+     }
  
++    // Calendar integration: the dashboard calendar asks for System > Calendar
++    function openRequestedCalendar() {
++        if (!GlobalStates.calendarSettingsRequested)
++            return;
++        GlobalStates.calendarSettingsRequested = false;
++        root.currentSection = "calendar";
++    }
++
++    Component.onCompleted: openRequestedCalendar()
++
++    Connections {
++        target: GlobalStates
++        function onCalendarSettingsRequestedChanged() {
++            root.openRequestedCalendar();
++        }
++    }
++
++    // Calendar integration: its settings live in System instead of a sidebar entry
++    Loader {
++        anchors.fill: parent
++        active: root.currentSection === "calendar"
++        visible: active
++        source: "CalendarPanel.qml"
++        onLoaded: item.backRequested.connect(() => root.currentSection = "")
++    }
++
+     // =====================
+     // HELPER COMPONENTS
+     // =====================
 diff --git a/modules/widgets/dashboard/widgets/WidgetsTab.qml b/modules/widgets/dashboard/widgets/WidgetsTab.qml
-index 18082e7d..998d17a5 100644
+index 18082e7d..2647848e 100644
 --- a/modules/widgets/dashboard/widgets/WidgetsTab.qml
 +++ b/modules/widgets/dashboard/widgets/WidgetsTab.qml
 @@ -13,11 +13,30 @@ import qs.config
@@ -2472,7 +2342,7 @@ index 18082e7d..998d17a5 100644
  
      RowLayout {
          anchors.fill: parent
-@@ -57,23 +76,172 @@ Rectangle {
+@@ -57,23 +76,174 @@ Rectangle {
                      }
  
                      Calendar {
@@ -2481,7 +2351,9 @@ index 18082e7d..998d17a5 100644
                          Layout.preferredHeight: width
 +                        onOpenCalendarSettings: {
 +                            GlobalStates.settingsWindowVisible = true;
-+                            Qt.callLater(() => { GlobalStates.settingsCurrentTab = ModsService.settingsMenuPosition("community.calendar-integration"); });
++                            // Calendar settings live in System, the eighth Settings entry
++                            GlobalStates.calendarSettingsRequested = true;
++                            Qt.callLater(() => { GlobalStates.settingsCurrentTab = 7; });
 +                        }
 +                        onDaySelected: (d, m, y) => {
 +                            calDay = d;

@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "id": "community.calendar-integration",
   "name": "Calendar integration",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Adds Google Calendar and CalDAV accounts, event editing, reminders, and bar integration.",
   "license": "AGPL-3.0-only",
   "author": "flathead",
@@ -13,6 +13,7 @@
     "api": 1,
     "ambxst": ">=1.3.8 <1.4.0",
     "testedBaseCommits": [
+      "2a704c438ddc0b94a11f4e4cf32a16220b62141f",
       "c33dd43da5fb6feeefa521bd1f406b8ff20db577"
     ]
   },
@@ -29,10 +30,6 @@
     "Reads existing gcalcli credentials when the user imports them",
     "Plays reminder sounds, including an optional audio file selected by the user"
   ],
-  "settingsMenu": {
-    "section": 11,
-    "index": -2
-  },
   "operations": [
     {
       "type": "patch",

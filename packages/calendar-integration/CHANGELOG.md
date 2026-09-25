@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.3 - 2026-09-25
+
+- Move Calendar settings to System > Calendar. The mod no longer adds a Settings sidebar entry, so it cannot take another mod's position.
+- Open System > Calendar from the dashboard calendar on stock Ambxst builds.
+- Point settings search results at System > Calendar.
+- Drop whitespace-only edits from the patch to reduce conflicts with other mods.
+
 ## 1.1.2 - 2026-09-25
 
 - Keep Calendar in the penultimate Settings menu position.
