@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.9
+
+- Size the popup to its content. It scrolls only when the screen has no room for the full menu.
+- Give the scroll bar its own gutter so it no longer covers buttons and cards. The popup widens by the gutter, so the content keeps its width.
+- Apply the same sizing to the installation dialog and the share confirmation.
+
 ## 1.0.8
 
 - Hide the separate KDE Connect tray icon from each tray delegate instead of rewriting the tray item lists, so the mod installs next to other mods that change the system tray, such as Bar glance.

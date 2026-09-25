@@ -305,6 +305,17 @@ class PackageIntegrationTests(unittest.TestCase):
         ]
         self.assertEqual(removed, [])
 
+    def test_popup_fits_content_and_keeps_scroll_gutter_apart(self) -> None:
+        widget = (PACKAGE / "payload/modules/bar/KdeConnectHelper.qml").read_text(encoding="utf-8")
+        # Height follows the content and is capped only by the measured screen space
+        self.assertIn("Math.min(neededHeight, root.popupSpace)", widget)
+        self.assertNotIn("Math.min(486", widget)
+        # The scroll bar appears only on overflow and gets its own gutter
+        self.assertEqual(widget.count("ScrollBar.AlwaysOn : ScrollBar.AlwaysOff"), 2)
+        self.assertIn("scrollArea.width - (scrollArea.overflowing ? root.scrollGutter : 0)", widget)
+        self.assertIn("baseWidth + (scrollArea.overflowing ? root.scrollGutter : 0)", widget)
+        self.assertNotIn("width - 6", widget)
+
     def test_file_sharing_uses_the_desktop_portal(self) -> None:
         widget = (PACKAGE / "payload/modules/bar/KdeConnectHelper.qml").read_text(encoding="utf-8")
         service = (PACKAGE / "payload/modules/services/KdeConnectService.qml").read_text(

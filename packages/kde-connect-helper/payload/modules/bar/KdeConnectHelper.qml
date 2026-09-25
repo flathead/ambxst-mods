@@ -101,8 +101,32 @@ Item {
     Layout.fillHeight: !vertical
     visible: KdeConnectService.shouldShowButton
 
+    // Largest popup content height that fits between the bar and the far screen
+    // edge. Measured on open because the button's place on the bar can change.
+    property real popupSpace: 480
+    readonly property int popupEdgeGap: 8
+    readonly property int scrollGutter: 14
+
+    function updatePopupSpace() {
+        const screenHeight = root.bar?.screen?.height ?? 0;
+        if (screenHeight <= 0)
+            return;
+        let reserved = popupEdgeGap * 2;
+        if (!helperPopup.barVertical) {
+            const origin = buttonBackground.mapToItem(null, 0, 0);
+            const windowHeight = buttonBackground.Window.window?.height ?? screenHeight;
+            const barExtent = helperPopup.barAtTop
+                ? origin.y + buttonBackground.height
+                : windowHeight - origin.y;
+            reserved = barExtent + helperPopup.visualMargin + helperPopup.effectiveFrameOffset + popupEdgeGap;
+        }
+        popupSpace = Math.max(160, screenHeight - reserved - helperPopup.popupPadding * 2);
+    }
+
     function openPrimary() {
         if (!KdeConnectService.installed || KdeConnectService.primaryClick === "popup") {
+            if (!helperPopup.isOpen)
+                root.updatePopupSpace();
             helperPopup.toggle();
             if (!KdeConnectService.installed) {
                 root.installStep = 0;
@@ -409,10 +433,13 @@ Item {
         id: helperPopup
         anchorItem: buttonBackground
         bar: root.bar
-        contentWidth: Math.max(280, Math.min(336, (root.bar?.screen?.width ?? 384) - 48))
-        contentHeight: installModal.visible
-            ? Math.max(320, Math.min(390, (root.bar?.screen?.height ?? 454) - 64))
-            : Math.max(320, Math.min(486, (root.bar?.screen?.height ?? 550) - 64))
+        // The scroll gutter widens the popup instead of narrowing its content
+        readonly property real baseWidth: Math.max(280, Math.min(336, (root.bar?.screen?.width ?? 384) - 48 - root.scrollGutter))
+        readonly property real neededHeight: Math.max(scrollArea.contentHeight,
+            installModal.visible ? installColumn.implicitHeight + 40 : 0,
+            confirmModal.visible ? confirmColumn.implicitHeight + 40 : 0)
+        contentWidth: baseWidth + (scrollArea.overflowing ? root.scrollGutter : 0)
+        contentHeight: Math.ceil(Math.min(neededHeight, root.popupSpace)) + popupPadding * 2
         closeOnFocusLost: KdeConnectService.operation !== "choose_files"
         onIsOpenChanged: {
             if (isOpen)
@@ -424,17 +451,24 @@ Item {
         Flickable {
             id: scrollArea
             anchors.fill: parent
+            readonly property bool overflowing: contentHeight > height + 1
             contentWidth: width
             contentHeight: popupColumn.implicitHeight
             clip: true
             boundsBehavior: Flickable.StopAtBounds
+            interactive: overflowing
             enabled: !installModal.visible && !confirmModal.visible
             visible: enabled
-            ScrollBar.vertical: ScrollBar {}
+            // Shown only when the content really overflows; it sits in its own
+            // gutter to the right of the content instead of over it
+            ScrollBar.vertical: ScrollBar {
+                policy: scrollArea.overflowing ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                implicitWidth: root.scrollGutter - 6
+            }
 
             ColumnLayout {
                 id: popupColumn
-                width: scrollArea.width - 6
+                width: scrollArea.width - (scrollArea.overflowing ? root.scrollGutter : 0)
                 spacing: 8
 
                 RowLayout {
@@ -828,16 +862,22 @@ Item {
                 variant: "popup"
                 radius: Styling.radius(4)
                 Flickable {
+                    id: installScroll
+                    readonly property bool overflowing: contentHeight > height + 1
                     anchors.fill: parent
                     anchors.margins: 12
                     contentWidth: width
                     contentHeight: installColumn.implicitHeight
                     clip: true
                     boundsBehavior: Flickable.StopAtBounds
-                    ScrollBar.vertical: ScrollBar {}
+                    interactive: overflowing
+                    ScrollBar.vertical: ScrollBar {
+                        policy: installScroll.overflowing ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                        implicitWidth: root.scrollGutter - 6
+                    }
                     ColumnLayout {
                         id: installColumn
-                        width: parent.width - 6
+                        width: parent.width - (installScroll.overflowing ? root.scrollGutter : 0)
                         spacing: 7
                     Text {
                         Layout.fillWidth: true
@@ -1025,8 +1065,10 @@ Item {
         function onFilesChosen(paths) {
             root.pendingFiles = paths;
             root.confirmAction = "file";
-            if (!helperPopup.isOpen)
+            if (!helperPopup.isOpen) {
+                root.updatePopupSpace();
                 helperPopup.open();
+            }
             confirmModal.visible = true;
         }
     }
