@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.8
+
+- Hide the separate KDE Connect tray icon from each tray delegate instead of rewriting the tray item lists, so the mod installs next to other mods that change the system tray, such as Bar glance.
+
 ## 1.0.7
 
 - Show a charging icon without replacing the battery percentage.

@@ -110,6 +110,19 @@ Singleton {
         return /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(text) ? text : fallback;
     }
 
+    function isKdeConnectItem(item) {
+        const identity = [item?.id, item?.title, item?.icon]
+            .map(value => String(value ?? "").toLowerCase())
+            .join(" ");
+        return identity.includes("kde connect") || identity.includes("kdeconnect");
+    }
+
+    // Called from each system tray delegate, so the tray keeps its own item
+    // lists and other mods can patch them without conflicting with this one
+    function hidesTrayItem(item) {
+        return hideKdeConnectTrayIcon && isKdeConnectItem(item);
+    }
+
     function loadSettings() {
         ModsService.getSettings(modId, (result, error) => {
             if (error || !result)

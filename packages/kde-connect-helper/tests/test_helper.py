@@ -286,9 +286,24 @@ class PackageIntegrationTests(unittest.TestCase):
         service = (PACKAGE / "payload/modules/services/KdeConnectService.qml").read_text(
             encoding="utf-8"
         )
-        self.assertIn("function isKdeConnectItem", feature_patch)
-        self.assertIn('identity.includes("kde connect")', feature_patch)
-        self.assertIn("hideKdeConnectTrayIcon", service)
+        self.assertIn("function isKdeConnectItem", service)
+        self.assertIn('identity.includes("kde connect")', service)
+        self.assertIn("return hideKdeConnectTrayIcon && isKdeConnectItem(item);", service)
+        self.assertIn("visible: !KdeConnectService.hidesTrayItem(root.item)", feature_patch)
+
+    def test_tray_patch_only_inserts_lines(self) -> None:
+        # Other mods rewrite the tray item lists. The mod manager merges
+        # insert-only hunks from several packages but stops on rewritten lines.
+        feature_patch = (PACKAGE / "patches/feature.patch").read_text(encoding="utf-8")
+        self.assertNotIn("a/modules/bar/systray/SysTray.qml", feature_patch)
+        tray_diff = feature_patch.split("diff --git a/modules/bar/systray/SysTrayItem.qml", 1)[1]
+        tray_diff = tray_diff.split("\ndiff --git ", 1)[0]
+        removed = [
+            line
+            for line in tray_diff.splitlines()
+            if line.startswith("-") and not line.startswith("---")
+        ]
+        self.assertEqual(removed, [])
 
     def test_file_sharing_uses_the_desktop_portal(self) -> None:
         widget = (PACKAGE / "payload/modules/bar/KdeConnectHelper.qml").read_text(encoding="utf-8")

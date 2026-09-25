@@ -84,35 +84,21 @@ index 9d43848a..012fccb9 100644
                          PowerButton {
                              id: powerButtonVert
                              Layout.preferredHeight: 36
-diff --git a/modules/bar/systray/SysTray.qml b/modules/bar/systray/SysTray.qml
-index ee1392e0..7b206397 100644
---- a/modules/bar/systray/SysTray.qml
-+++ b/modules/bar/systray/SysTray.qml
-@@ -20,12 +20,21 @@ StyledRect {
-     property bool vertical: bar.orientation === "vertical"
+diff --git a/modules/bar/systray/SysTrayItem.qml b/modules/bar/systray/SysTrayItem.qml
+index 346f18af..9e2da4d7 100644
+--- a/modules/bar/systray/SysTrayItem.qml
++++ b/modules/bar/systray/SysTrayItem.qml
+@@ -45,6 +45,10 @@ MouseArea {
+     implicitWidth: trayItemSize
+     implicitHeight: trayItemSize
 
-     readonly property var allItems: SystemTray.items?.values ?? []
-+    readonly property var eligibleItems: allItems.filter(item =>
-+        !KdeConnectService.hideKdeConnectTrayIcon || !isKdeConnectItem(item))
-     readonly property var hiddenIds: StateService.systrayHidden
--    readonly property var visibleItems: allItems.filter(item => !hiddenIds.includes(item.id))
--    readonly property var overflowItems: allItems.filter(item => hiddenIds.includes(item.id))
-+    readonly property var visibleItems: eligibleItems.filter(item => !hiddenIds.includes(item.id))
-+    readonly property var overflowItems: eligibleItems.filter(item => hiddenIds.includes(item.id))
-
-     // The tray collapses to a chevron-only pill while every icon is in the popup
--    readonly property bool hasItems: allItems.length > 0
-+    readonly property bool hasItems: eligibleItems.length > 0
++    // KDE Connect helper replaces the separate KDE Connect tray icon when
++    // configured. Invisible delegates are skipped by the bar and popup layouts.
++    visible: !KdeConnectService.hidesTrayItem(root.item)
 +
-+    function isKdeConnectItem(item) {
-+        const identity = [item?.id, item?.title, item?.icon]
-+            .map(value => String(value ?? "").toLowerCase())
-+            .join(" ");
-+        return identity.includes("kde connect") || identity.includes("kdeconnect");
-+    }
-
-     // Menu popup currently opened from an icon inside the overflow popup
-     property var activeChildMenu: null
+     // Native Wayland drag: the compositor carries the icon above every
+     // surface and delivers the drop to whichever window sits under the
+     // pointer, so bar ↔ popup transfers need no coordinate work
 diff --git a/modules/theme/Icons.qml b/modules/theme/Icons.qml
 index 3333506c..d2ed392a 100644
 --- a/modules/theme/Icons.qml
