@@ -1,5 +1,5 @@
 diff --git a/config/Config.qml b/config/Config.qml
-index ab5ce35c..db6523f8 100644
+index ab5ce35c..bca4c995 100644
 --- a/config/Config.qml
 +++ b/config/Config.qml
 @@ -546,6 +546,7 @@ Singleton {
@@ -10,11 +10,57 @@ index ab5ce35c..db6523f8 100644
              property bool containBar: false
              property bool keepBarShadow: false
              property bool keepBarBorder: false
+@@ -1008,6 +1009,14 @@ Singleton {
+         adapter: JsonAdapter {
+             property list<string> disks: ["/"]
+             property bool updateServiceEnabled: true
++            property JsonObject keyboardLayoutOsd: JsonObject {
++                property bool enabled: true
++                property string style: "card"
++                property string textFormat: "name"
++                property string horizontalPosition: "center"
++                property string verticalPosition: "bottom"
++                property int backgroundOpacity: 72
++            }
+             property JsonObject idle: JsonObject {
+                 property JsonObject general: JsonObject {
+                     property string lock_cmd: "ambxst lock"
+diff --git a/config/defaults/bar.js b/config/defaults/bar.js
+index 7962cdde..35ea7147 100644
+--- a/config/defaults/bar.js
++++ b/config/defaults/bar.js
+@@ -16,6 +16,7 @@ var data = {
+     "hoverToReveal": true,
+     "hoverRegionHeight": 8,
+     "showPinButton": true,
++    "showKeyboardLayout": true,
+     "availableOnFullscreen": false,
+     "use12hFormat": false,
+     "containBar": false,
+diff --git a/config/defaults/system.js b/config/defaults/system.js
+index b7b2b2a7..f2d0bd17 100644
+--- a/config/defaults/system.js
++++ b/config/defaults/system.js
+@@ -3,6 +3,14 @@
+ var data = {
+     "disks": ["/"],
+     "language": "auto",
++    "keyboardLayoutOsd": {
++        "enabled": true,
++        "style": "card",
++        "textFormat": "name",
++        "horizontalPosition": "center",
++        "verticalPosition": "bottom",
++        "backgroundOpacity": 72
++    },
+     "updateServiceEnabled": true,
+     "idle": {
+         "general": {
 diff --git a/modules/bar/BarContent.qml b/modules/bar/BarContent.qml
-index 9d43848a..7cafd195 100644
+index 5ae8d2ea..e71a07ea 100644
 --- a/modules/bar/BarContent.qml
 +++ b/modules/bar/BarContent.qml
-@@ -542,6 +542,20 @@ Item {
+@@ -537,6 +537,20 @@ Item {
                              endRadius: root.innerRadius
                          }
  
@@ -35,7 +81,7 @@ index 9d43848a..7cafd195 100644
                          Bar.BatteryIndicator {
                              id: batteryIndicator
                              bar: root
-@@ -749,6 +763,21 @@ Item {
+@@ -744,6 +758,21 @@ Item {
                              endRadius: root.innerRadius
                          }
  
@@ -239,16 +285,18 @@ index 00000000..d110ac02
 +}
 diff --git a/modules/services/KeyboardLayoutService.qml b/modules/services/KeyboardLayoutService.qml
 new file mode 100644
-index 00000000..84d4d524
+index 00000000..641dbe7e
 --- /dev/null
 +++ b/modules/services/KeyboardLayoutService.qml
-@@ -0,0 +1,215 @@
+@@ -0,0 +1,258 @@
 +pragma Singleton
 +
 +import QtQuick
 +import Quickshell
 +import Quickshell.Hyprland
 +import Quickshell.Io
++import qs.modules.services
++import qs.config
 +
 +Singleton {
 +    id: root
@@ -267,6 +315,9 @@ index 00000000..84d4d524
 +    // Dynamic map of layout code → display name, built as layouts are activated
 +    property var keymapNames: ({})
 +    property int initAttempts: 0
++    property bool hasDeviceState: false
++
++    signal layoutChanged(string layout, string keymap)
 +
 +    // Short display code for the bar button
 +    readonly property string displayCode: {
@@ -292,6 +343,32 @@ index 00000000..84d4d524
 +        return code.toUpperCase();
 +    }
 +
++    function getOsdCode() {
++        const code = root.currentLayout.toLowerCase();
++        const languageCodes = {
++            us: "EN", gb: "EN", au: "EN", nz: "EN",
++            br: "PT", pt: "PT", ua: "UK", jp: "JA", cn: "ZH"
++        };
++        return languageCodes[code] || (code ? code.toUpperCase() : "??");
++    }
++
++    function getOsdName() {
++        const code = root.currentLayout.toLowerCase();
++        const translated = {
++            us: "keyboard_layout_osd.layout.us",
++            gb: "keyboard_layout_osd.layout.gb",
++            ru: "keyboard_layout_osd.layout.ru"
++        };
++        // Variants need their full XKB name; a short translated base name
++        // would hide the active variant (for example Dvorak).
++        const baseKeymap = {
++            us: "English (US)", gb: "English (UK)", ru: "Russian"
++        };
++        if (translated[code] && (!root.currentKeymap || root.currentKeymap === baseKeymap[code]))
++            return I18n.t(translated[code]);
++        return root.currentKeymap || root.getDisplayName(code);
++    }
++
 +    // Parse devices JSON and apply state
 +    function applyDevicesState(jsonStr) {
 +        try {
@@ -305,11 +382,22 @@ index 00000000..84d4d524
 +            if (!kb) kb = keyboards.find(k => k.layout && k.layout.length > 0);
 +            if (!kb) return;
 +
++            const previousLayout = root.currentLayout;
++            const previousKeymap = root.currentKeymap;
++            const previousIndex = root.currentIndex;
++            const hadDeviceState = root.hasDeviceState;
++
 +            root.mainKeyboard = kb.name;
 +            root.availableLayouts = kb.layout.split(",").map(l => l.trim());
 +            root.currentIndex = kb.active_layout_index || 0;
 +            root.currentLayout = root.availableLayouts[root.currentIndex] || "";
 +            root.currentKeymap = kb.active_keymap || "";
++            root.hasDeviceState = true;
++
++            if (hadDeviceState && (root.currentLayout !== previousLayout
++                    || root.currentIndex !== previousIndex
++                    || root.currentKeymap !== previousKeymap))
++                root.layoutChanged(root.currentLayout, root.currentKeymap);
 +
 +            // Override with Hyprland's active keymap name (more accurate)
 +            if (root.currentLayout && root.currentKeymap && root.keymapNames[root.currentLayout] !== root.currentKeymap) {
@@ -367,7 +455,10 @@ index 00000000..84d4d524
 +
 +        onExited: (code) => {
 +            if (code === 0 && initProcess.buffer !== "") {
-+                root.applyDevicesState(initProcess.buffer);
++                // A socket event or poll may have supplied a newer snapshot
++                // while this initial query was still running.
++                if (!root.hasDeviceState)
++                    root.applyDevicesState(initProcess.buffer);
 +                root.initAttempts = 0;
 +            } else if (root.initAttempts < 15) {
 +                // Hyprland IPC is not up yet. Back off and retry rather than
@@ -404,8 +495,6 @@ index 00000000..84d4d524
 +            if (commaIdx === -1)
 +                return;
 +
-+            root.currentKeymap = event.data.substring(commaIdx + 1).trim();
-+
 +            // Re-query devices for the authoritative active index.
 +            refreshProcess.buffer = "";
 +            refreshProcess.running = true;
@@ -437,7 +526,7 @@ index 00000000..84d4d524
 +    // Poll for XKB-level layout changes (grp:alt_shift_toggle doesn't emit socket events)
 +    Timer {
 +        id: pollTimer
-+        interval: 500
++        interval: (Config.system?.keyboardLayoutOsd?.enabled ?? true) ? 250 : 500
 +        running: true
 +        repeat: true
 +        onTriggered: {
@@ -458,20 +547,168 @@ index 00000000..84d4d524
 +        pollTimer.running = false;
 +    }
 +}
+diff --git a/modules/shell/osd/KeyboardLayoutOsd.qml b/modules/shell/osd/KeyboardLayoutOsd.qml
+new file mode 100644
+index 00000000..0c074bd7
+--- /dev/null
++++ b/modules/shell/osd/KeyboardLayoutOsd.qml
+@@ -0,0 +1,140 @@
++pragma ComponentBehavior: Bound
++
++import QtQuick
++import QtQuick.Layouts
++import Quickshell
++import Quickshell.Wayland
++import qs.modules.components
++import qs.modules.globals
++import qs.modules.services
++import qs.modules.theme
++import qs.config
++
++PanelWindow {
++    id: root
++
++    required property ShellScreen targetScreen
++    screen: targetScreen
++
++    WlrLayershell.layer: WlrLayer.Overlay
++    WlrLayershell.namespace: "ambxst:keyboard-layout-osd"
++    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
++    exclusionMode: ExclusionMode.Ignore
++
++    anchors.top: true
++    anchors.bottom: true
++    anchors.left: true
++    anchors.right: true
++    color: "transparent"
++    mask: Region { item: null }
++
++    property bool showing: false
++    readonly property var options: Config.system?.keyboardLayoutOsd
++    readonly property string style: options?.style ?? "card"
++    readonly property bool isCapsule: style === "capsule"
++    readonly property bool isCard: style === "card"
++    readonly property bool isLarge: !isCapsule && !isCard
++    readonly property string displayText: (options?.textFormat ?? "name") === "name"
++        ? KeyboardLayoutService.getOsdName() : KeyboardLayoutService.getOsdCode()
++    readonly property string horizontalPosition: options?.horizontalPosition ?? "center"
++    readonly property string verticalPosition: options?.verticalPosition ?? "bottom"
++    readonly property real backgroundAlpha: Math.max(0, Math.min(100, options?.backgroundOpacity ?? 72)) / 100
++
++    visible: showing && (options?.enabled ?? true) && !GlobalStates.lockscreenVisible
++
++    Connections {
++        target: KeyboardLayoutService
++
++        function onLayoutChanged() {
++            const focusedName = AxctlService.focusedMonitor?.name
++                ?? (Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "");
++            if (!root.options?.enabled || KeyboardLayoutService.availableLayouts.length < 2
++                    || root.targetScreen.name !== focusedName || GlobalStates.lockscreenVisible)
++                return;
++            root.showing = true;
++            hideTimer.restart();
++        }
++    }
++
++    Timer {
++        id: hideTimer
++        interval: 1000
++        onTriggered: root.showing = false
++    }
++
++    onVisibleChanged: {
++        if (!visible) {
++            hideTimer.stop();
++            showing = false;
++        }
++    }
++
++    StyledRect {
++        id: card
++        variant: "popup"
++        backgroundOpacity: root.backgroundAlpha
++        enableBorder: root.backgroundAlpha > 0
++        enableShadow: root.backgroundAlpha > 0
++        radius: Styling.radius(root.isCapsule ? 12 : (root.isCard ? 0 : 8))
++
++        width: {
++            const textWidth = label.implicitWidth;
++            const desired = root.isCapsule ? Math.max(96, textWidth + 44)
++                : root.isCard ? Math.max(184, textWidth + 92)
++                : Math.max((root.options?.textFormat ?? "name") === "name" ? 220 : 148, textWidth + 56);
++            return Math.min(desired, Math.max(80, root.width - 64));
++        }
++        height: root.isCapsule ? 50 : (root.isCard ? 70 : 116)
++
++        x: root.horizontalPosition === "left" ? 32
++            : root.horizontalPosition === "right" ? root.width - width - 32
++            : (root.width - width) / 2
++        y: root.verticalPosition === "top" ? 92
++            : root.verticalPosition === "bottom"
++                ? root.height - height - 100 - (GlobalStates.osdVisible ? 72 : 0)
++                : (root.height - height) / 2
++
++        RowLayout {
++            anchors.centerIn: parent
++            width: parent.width - (root.isCard ? 32 : 24)
++            spacing: 12
++
++            Text {
++                visible: root.isCard
++                text: Icons.keyboard
++                font.family: Icons.font
++                font.pixelSize: 23
++                color: card.item
++            }
++
++            ColumnLayout {
++                Layout.fillWidth: true
++                spacing: 0
++
++                Text {
++                    visible: root.isCard
++                    text: I18n.t("keyboard_layout_osd.title")
++                    font.family: Config.theme.font
++                    font.pixelSize: Styling.fontSize(-3)
++                    color: card.item
++                    opacity: 0.72
++                }
++
++                Text {
++                    id: label
++                    Layout.fillWidth: true
++                    text: root.displayText
++                    font.family: Config.theme.font
++                    font.pixelSize: root.isLarge
++                        ? ((root.options?.textFormat ?? "name") === "name" ? Styling.fontSize(16) : Styling.fontSize(38))
++                        : (root.isCard ? Styling.fontSize(9) : Styling.fontSize(8))
++                    font.weight: Font.DemiBold
++                    color: card.item
++                    horizontalAlignment: root.isCard ? Text.AlignLeft : Text.AlignHCenter
++                    elide: Text.ElideRight
++                    maximumLineCount: 1
++                }
++            }
++        }
++    }
++}
 diff --git a/modules/widgets/dashboard/controls/SettingsIndex.qml b/modules/widgets/dashboard/controls/SettingsIndex.qml
-index 0ef76170..4a1fe92e 100644
+index 0ef76170..27384c49 100644
 --- a/modules/widgets/dashboard/controls/SettingsIndex.qml
 +++ b/modules/widgets/dashboard/controls/SettingsIndex.qml
-@@ -163,6 +163,7 @@ QtObject {
+@@ -163,6 +163,9 @@ QtObject {
          { label: I18n.t("settings.shell.launcher_icon_size"), keywords: "width height pixels", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
          { label: I18n.t("settings.shell.pill_style"), keywords: "squished roundness radius bar", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
          { label: I18n.t("settings.shell.firefox_player"), keywords: "browser media music", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
 +        { label: I18n.t("shell.show_keyboard_layout"), keywords: "language input switch layout keyboard locale xkb", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.globe, isIcon: true },
++        { label: I18n.t("keyboard_layout_osd.title"), keywords: "keyboard layout popup osd language shortcut transparency opacity", section: 8, subSection: "system", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.system"), icon: Icons.keyboard, isIcon: true },
++        { label: I18n.t("keyboard_layout_osd.background_opacity"), keywords: "transparent alpha background", section: 8, subSection: "system", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.system"), icon: Icons.drop, isIcon: true },
          { label: I18n.t("settings.shell.bar_autohide"), keywords: "autohide hide show reveal", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
          { label: I18n.t("settings.shell.pinned_on_startup"), keywords: "show visible default", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
          { label: I18n.t("settings.shell.hover_to_reveal"), keywords: "mouse show hide edge", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
 diff --git a/modules/widgets/dashboard/controls/ShellPanel.qml b/modules/widgets/dashboard/controls/ShellPanel.qml
-index 9723b55d..a811f234 100644
+index 9723b55d..881229e4 100644
 --- a/modules/widgets/dashboard/controls/ShellPanel.qml
 +++ b/modules/widgets/dashboard/controls/ShellPanel.qml
 @@ -816,6 +816,17 @@ Item {
@@ -492,3 +729,193 @@ index 9723b55d..a811f234 100644
                          Separator {
                              Layout.fillWidth: true
                          }
+@@ -1753,6 +1764,82 @@ Item {
+                             Layout.bottomMargin: -4
+                         }
+ 
++                        Text {
++                            text: I18n.t("keyboard_layout_osd.title")
++                            font.family: Config.theme.font
++                            font.pixelSize: Styling.fontSize(-1)
++                            font.weight: Font.Medium
++                            color: Colors.overSurfaceVariant
++                        }
++
++                        ToggleRow {
++                            label: I18n.t("keyboard_layout_osd.enabled")
++                            checked: Config.system.keyboardLayoutOsd?.enabled ?? true
++                            onToggled: value => {
++                                if (value !== Config.system.keyboardLayoutOsd.enabled)
++                                    Config.system.keyboardLayoutOsd.enabled = value;
++                            }
++                        }
++
++                        SelectorRow {
++                            label: I18n.t("keyboard_layout_osd.style")
++                            enabled: Config.system.keyboardLayoutOsd?.enabled ?? true
++                            options: [
++                                { label: I18n.t("keyboard_layout_osd.style_capsule"), value: "capsule" },
++                                { label: I18n.t("keyboard_layout_osd.style_card"), value: "card" },
++                                { label: I18n.t("keyboard_layout_osd.style_large"), value: "large" }
++                            ]
++                            value: Config.system.keyboardLayoutOsd?.style ?? "card"
++                            onValueSelected: newValue => Config.system.keyboardLayoutOsd.style = newValue
++                        }
++
++                        SelectorRow {
++                            label: I18n.t("keyboard_layout_osd.text_format")
++                            enabled: Config.system.keyboardLayoutOsd?.enabled ?? true
++                            options: [
++                                { label: I18n.t("keyboard_layout_osd.code"), value: "code" },
++                                { label: I18n.t("keyboard_layout_osd.name"), value: "name" }
++                            ]
++                            value: Config.system.keyboardLayoutOsd?.textFormat ?? "name"
++                            onValueSelected: newValue => Config.system.keyboardLayoutOsd.textFormat = newValue
++                        }
++
++                        SelectorRow {
++                            label: I18n.t("keyboard_layout_osd.vertical_position")
++                            enabled: Config.system.keyboardLayoutOsd?.enabled ?? true
++                            options: [
++                                { label: I18n.t("common.top"), value: "top" },
++                                { label: I18n.t("keyboard_layout_osd.center"), value: "center" },
++                                { label: I18n.t("common.bottom"), value: "bottom" }
++                            ]
++                            value: Config.system.keyboardLayoutOsd?.verticalPosition ?? "bottom"
++                            onValueSelected: newValue => Config.system.keyboardLayoutOsd.verticalPosition = newValue
++                        }
++
++                        SelectorRow {
++                            label: I18n.t("keyboard_layout_osd.horizontal_position")
++                            enabled: Config.system.keyboardLayoutOsd?.enabled ?? true
++                            options: [
++                                { label: I18n.t("common.left"), value: "left" },
++                                { label: I18n.t("keyboard_layout_osd.center"), value: "center" },
++                                { label: I18n.t("common.right"), value: "right" }
++                            ]
++                            value: Config.system.keyboardLayoutOsd?.horizontalPosition ?? "center"
++                            onValueSelected: newValue => Config.system.keyboardLayoutOsd.horizontalPosition = newValue
++                        }
++
++                        NumberInputRow {
++                            label: I18n.t("keyboard_layout_osd.background_opacity")
++                            enabled: Config.system.keyboardLayoutOsd?.enabled ?? true
++                            value: Config.system.keyboardLayoutOsd?.backgroundOpacity ?? 72
++                            minValue: 0
++                            maxValue: 100
++                            suffix: "%"
++                            onValueEdited: newValue => Config.system.keyboardLayoutOsd.backgroundOpacity = newValue
++                        }
++
++                        Separator { Layout.fillWidth: true }
++
+                         ToggleRow {
+                             label: I18n.t("shell.system.update_service")
+                             checked: Config.system.updateServiceEnabled ?? true
+diff --git a/shell.qml b/shell.qml
+index 888996d3..549b024a 100644
+--- a/shell.qml
++++ b/shell.qml
+@@ -273,6 +273,21 @@ ShellRoot {
+         }
+     }
+ 
++    // A separate, input-transparent overlay keeps layout feedback independent
++    // from the volume and brightness OSD and its timer.
++    Variants {
++        model: Quickshell.screens
++
++        Loader {
++            id: keyboardLayoutOsdLoader
++            active: SuspendManager.wakeReady
++            required property ShellScreen modelData
++            sourceComponent: KeyboardLayoutOsd {
++                targetScreen: keyboardLayoutOsdLoader.modelData
++            }
++        }
++    }
++
+     // Init clipboard service
+     Connections {
+         target: ClipboardService
+diff --git a/translations/en.json b/translations/en.json
+index 208813c8..564dcd23 100644
+--- a/translations/en.json
++++ b/translations/en.json
+@@ -672,6 +672,22 @@
+   "shell.launcher_icon_size": "Launcher Icon Size",
+   "shell.launcher_icon_tint": "Launcher Icon Tint",
+   "shell.lockscreen.position": "Position",
++  "keyboard_layout_osd.title": "Keyboard layout",
++  "keyboard_layout_osd.enabled": "Show layout on screen",
++  "keyboard_layout_osd.style": "Appearance",
++  "keyboard_layout_osd.style_capsule": "Capsule",
++  "keyboard_layout_osd.style_card": "OSD card",
++  "keyboard_layout_osd.style_large": "Large tile",
++  "keyboard_layout_osd.text_format": "Text",
++  "keyboard_layout_osd.code": "Language code",
++  "keyboard_layout_osd.name": "Layout name",
++  "keyboard_layout_osd.vertical_position": "Vertical position",
++  "keyboard_layout_osd.horizontal_position": "Horizontal position",
++  "keyboard_layout_osd.center": "Center",
++  "keyboard_layout_osd.background_opacity": "Background opacity",
++  "keyboard_layout_osd.layout.us": "English (US)",
++  "keyboard_layout_osd.layout.gb": "English (UK)",
++  "keyboard_layout_osd.layout.ru": "Russian",
+   "shell.no_media_display": "No Media Display",
+   "shell.notch.compositor": "Compositor",
+   "shell.notch.custom_text": "Custom Text",
+diff --git a/translations/es.json b/translations/es.json
+index 4753da79..fae48358 100644
+--- a/translations/es.json
++++ b/translations/es.json
+@@ -672,6 +672,22 @@
+   "shell.launcher_icon_size": "Tamaño del icono del lanzador",
+   "shell.launcher_icon_tint": "Tinte del icono del lanzador",
+   "shell.lockscreen.position": "Posición",
++  "keyboard_layout_osd.title": "Distribución del teclado",
++  "keyboard_layout_osd.enabled": "Mostrar la distribución en pantalla",
++  "keyboard_layout_osd.style": "Aspecto",
++  "keyboard_layout_osd.style_capsule": "Cápsula",
++  "keyboard_layout_osd.style_card": "Tarjeta OSD",
++  "keyboard_layout_osd.style_large": "Bloque grande",
++  "keyboard_layout_osd.text_format": "Texto",
++  "keyboard_layout_osd.code": "Código de idioma",
++  "keyboard_layout_osd.name": "Nombre de la distribución",
++  "keyboard_layout_osd.vertical_position": "Posición vertical",
++  "keyboard_layout_osd.horizontal_position": "Posición horizontal",
++  "keyboard_layout_osd.center": "Centro",
++  "keyboard_layout_osd.background_opacity": "Opacidad del fondo",
++  "keyboard_layout_osd.layout.us": "Inglés (EE. UU.)",
++  "keyboard_layout_osd.layout.gb": "Inglés (Reino Unido)",
++  "keyboard_layout_osd.layout.ru": "Ruso",
+   "shell.no_media_display": "Sin visualización de medios",
+   "shell.notch.compositor": "Compositor",
+   "shell.notch.custom_text": "Texto personalizado",
+diff --git a/translations/ru.json b/translations/ru.json
+index 71b08528..42a27957 100644
+--- a/translations/ru.json
++++ b/translations/ru.json
+@@ -668,6 +668,22 @@
+   "shell.launcher_icon_size": "Размер иконки запуска",
+   "shell.launcher_icon_tint": "Тонировка иконки запуска",
+   "shell.lockscreen.position": "Положение",
++  "keyboard_layout_osd.title": "Раскладка клавиатуры",
++  "keyboard_layout_osd.enabled": "Показывать раскладку на экране",
++  "keyboard_layout_osd.style": "Внешний вид",
++  "keyboard_layout_osd.style_capsule": "Капсула",
++  "keyboard_layout_osd.style_card": "Карточка OSD",
++  "keyboard_layout_osd.style_large": "Крупная плашка",
++  "keyboard_layout_osd.text_format": "Текст",
++  "keyboard_layout_osd.code": "Код языка",
++  "keyboard_layout_osd.name": "Название раскладки",
++  "keyboard_layout_osd.vertical_position": "Положение по вертикали",
++  "keyboard_layout_osd.horizontal_position": "Положение по горизонтали",
++  "keyboard_layout_osd.center": "По центру",
++  "keyboard_layout_osd.background_opacity": "Непрозрачность фона",
++  "keyboard_layout_osd.layout.us": "Английский (США)",
++  "keyboard_layout_osd.layout.gb": "Английский (Великобритания)",
++  "keyboard_layout_osd.layout.ru": "Русский",
+   "shell.no_media_display": "Нет отображения медиа",
+   "shell.notch.compositor": "Композитор",
+   "shell.notch.custom_text": "Пользовательский текст",

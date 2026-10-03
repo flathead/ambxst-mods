@@ -46,6 +46,12 @@ all of them. Audio device switcher can read headset battery status through
 `dbus-send` and ArctisManager; audio switching works without that service.
 Keyboard layout names use `sh`, `awk`, and the system XKB rules at
 `/usr/share/X11/xkb/rules/evdev.lst`.
+The keyboard layout package also shows an input-transparent overlay for one
+second after a layout change. Configure its appearance (capsule, OSD card, or
+large tile), screen position, text format, and background opacity under
+**Settings → Ambxst → Shell → System → Keyboard layout**. The default is a
+bottom-centered OSD card with the layout name and a 72% opaque background. The
+bar button has its existing independent visibility setting under **Bar**.
 
 ## KDE Connect helper
 
