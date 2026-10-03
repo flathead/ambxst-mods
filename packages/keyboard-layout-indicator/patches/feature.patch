@@ -1,5 +1,5 @@
 diff --git a/config/Config.qml b/config/Config.qml
-index ab5ce35c..bca4c995 100644
+index ab5ce35c..a342e0f4 100644
 --- a/config/Config.qml
 +++ b/config/Config.qml
 @@ -546,6 +546,7 @@ Singleton {
@@ -38,7 +38,7 @@ index 7962cdde..35ea7147 100644
      "use12hFormat": false,
      "containBar": false,
 diff --git a/config/defaults/system.js b/config/defaults/system.js
-index b7b2b2a7..f2d0bd17 100644
+index b7b2b2a7..7246d2a6 100644
 --- a/config/defaults/system.js
 +++ b/config/defaults/system.js
 @@ -3,6 +3,14 @@
@@ -549,10 +549,10 @@ index 00000000..641dbe7e
 +}
 diff --git a/modules/shell/osd/KeyboardLayoutOsd.qml b/modules/shell/osd/KeyboardLayoutOsd.qml
 new file mode 100644
-index 00000000..0c074bd7
+index 00000000..cf0a6410
 --- /dev/null
 +++ b/modules/shell/osd/KeyboardLayoutOsd.qml
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,146 @@
 +pragma ComponentBehavior: Bound
 +
 +import QtQuick
@@ -594,6 +594,11 @@ index 00000000..0c074bd7
 +    readonly property string horizontalPosition: options?.horizontalPosition ?? "center"
 +    readonly property string verticalPosition: options?.verticalPosition ?? "bottom"
 +    readonly property real backgroundAlpha: Math.max(0, Math.min(100, options?.backgroundOpacity ?? 72)) / 100
++    readonly property real pixelRatio: Math.max(1, targetScreen?.devicePixelRatio ?? 1)
++
++    function alignToPixel(value) {
++        return Math.round(value * pixelRatio) / pixelRatio;
++    }
 +
 +    visible: showing && (options?.enabled ?? true) && !GlobalStates.lockscreenVisible
 +
@@ -637,58 +642,59 @@ index 00000000..0c074bd7
 +            const desired = root.isCapsule ? Math.max(96, textWidth + 44)
 +                : root.isCard ? Math.max(184, textWidth + 92)
 +                : Math.max((root.options?.textFormat ?? "name") === "name" ? 220 : 148, textWidth + 56);
-+            return Math.min(desired, Math.max(80, root.width - 64));
++            return root.alignToPixel(Math.min(desired, Math.max(80, root.width - 64)));
 +        }
 +        height: root.isCapsule ? 50 : (root.isCard ? 70 : 116)
 +
-+        x: root.horizontalPosition === "left" ? 32
++        x: root.alignToPixel(root.horizontalPosition === "left" ? 32
 +            : root.horizontalPosition === "right" ? root.width - width - 32
-+            : (root.width - width) / 2
-+        y: root.verticalPosition === "top" ? 92
++            : (root.width - width) / 2)
++        y: root.alignToPixel(root.verticalPosition === "top" ? 92
 +            : root.verticalPosition === "bottom"
 +                ? root.height - height - 100 - (GlobalStates.osdVisible ? 72 : 0)
-+                : (root.height - height) / 2
++                : (root.height - height) / 2)
 +
-+        RowLayout {
-+            anchors.centerIn: parent
-+            width: parent.width - (root.isCard ? 32 : 24)
-+            spacing: 12
++    }
++
++    RowLayout {
++        anchors.centerIn: card
++        width: card.width - (root.isCard ? 32 : 24)
++        spacing: 12
++
++        Text {
++            visible: root.isCard
++            text: Icons.keyboard
++            font.family: Icons.font
++            font.pixelSize: 23
++            color: card.item
++        }
++
++        ColumnLayout {
++            Layout.fillWidth: true
++            spacing: 0
 +
 +            Text {
 +                visible: root.isCard
-+                text: Icons.keyboard
-+                font.family: Icons.font
-+                font.pixelSize: 23
++                text: I18n.t("keyboard_layout_osd.title")
++                font.family: Config.theme.font
++                font.pixelSize: Styling.fontSize(-3)
 +                color: card.item
++                opacity: 0.72
 +            }
 +
-+            ColumnLayout {
++            Text {
++                id: label
 +                Layout.fillWidth: true
-+                spacing: 0
-+
-+                Text {
-+                    visible: root.isCard
-+                    text: I18n.t("keyboard_layout_osd.title")
-+                    font.family: Config.theme.font
-+                    font.pixelSize: Styling.fontSize(-3)
-+                    color: card.item
-+                    opacity: 0.72
-+                }
-+
-+                Text {
-+                    id: label
-+                    Layout.fillWidth: true
-+                    text: root.displayText
-+                    font.family: Config.theme.font
-+                    font.pixelSize: root.isLarge
-+                        ? ((root.options?.textFormat ?? "name") === "name" ? Styling.fontSize(16) : Styling.fontSize(38))
-+                        : (root.isCard ? Styling.fontSize(9) : Styling.fontSize(8))
-+                    font.weight: Font.DemiBold
-+                    color: card.item
-+                    horizontalAlignment: root.isCard ? Text.AlignLeft : Text.AlignHCenter
-+                    elide: Text.ElideRight
-+                    maximumLineCount: 1
-+                }
++                text: root.displayText
++                font.family: Config.theme.font
++                font.pixelSize: root.isLarge
++                    ? ((root.options?.textFormat ?? "name") === "name" ? Styling.fontSize(16) : Styling.fontSize(38))
++                    : (root.isCard ? Styling.fontSize(9) : Styling.fontSize(8))
++                font.weight: Font.DemiBold
++                color: card.item
++                horizontalAlignment: root.isCard ? Text.AlignLeft : Text.AlignHCenter
++                elide: Text.ElideRight
++                maximumLineCount: 1
 +            }
 +        }
 +    }
@@ -708,7 +714,7 @@ index 0ef76170..27384c49 100644
          { label: I18n.t("settings.shell.pinned_on_startup"), keywords: "show visible default", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
          { label: I18n.t("settings.shell.hover_to_reveal"), keywords: "mouse show hide edge", section: 8, subSection: "bar", subLabel: I18n.t("settings.ambxst") + " > " + I18n.t("settings.shell.bar"), icon: Icons.layout, isIcon: true },
 diff --git a/modules/widgets/dashboard/controls/ShellPanel.qml b/modules/widgets/dashboard/controls/ShellPanel.qml
-index 9723b55d..881229e4 100644
+index 9723b55d..f6d98690 100644
 --- a/modules/widgets/dashboard/controls/ShellPanel.qml
 +++ b/modules/widgets/dashboard/controls/ShellPanel.qml
 @@ -816,6 +816,17 @@ Item {

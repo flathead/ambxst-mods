@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 - 2026-10-03
+
+- Align the on-screen card to physical pixels and render its text above the shadow layer, so longer layout names stay sharp.
+
 ## 1.2.0 - 2026-10-03
 
 - Show the active layout for one second after a keyboard shortcut changes it, including XKB switches that Hyprland does not report as events.

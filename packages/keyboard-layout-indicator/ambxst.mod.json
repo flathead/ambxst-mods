@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "id": "community.keyboard-layout-indicator",
   "name": "Keyboard layout indicator",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Shows the Hyprland keyboard layout in the bar and in a configurable on-screen display.",
   "license": "AGPL-3.0-only",
   "author": "flathead",
