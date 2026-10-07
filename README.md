@@ -86,6 +86,10 @@ evaluation. Privileged installation accepts only fixed, root-owned system
 executables. Output is bounded, device identifiers are validated, operations
 time out, and sharing requires confirmation.
 
+## OCR text selection
+
+[OCR text selection](https://github.com/flathead/ambxst-mods/tree/main/packages/ocr-text-selection) improves multilingual screen recognition and adds a text action to screenshot previews. From the toolbar, select an area, review or edit the recognized text, and copy the part you need. Drag the result window by its header to move it. The mod works with the stock Ambxst 1.3.9 binary and requires Python 3 with Pillow, Tesseract, `wl-copy`, and the models for your selected languages. It uses the existing OCR settings without a preferred language.
+
 ## Languages and release metadata
 
 Each package includes `CHANGELOG.md` and declares its interface language support.

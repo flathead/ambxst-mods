@@ -1,0 +1,266 @@
+diff --git a/config/defaults/system.js b/config/defaults/system.js
+index b7b2b2a75062f0c8b817eb70c97ece4c2cebb9bb..19bb02fbe55ba19dc9fddad44526f7cde9666180 100644
+--- a/config/defaults/system.js
++++ b/config/defaults/system.js
+@@ -38,7 +38,8 @@ var data = {
+         "jpn": false,
+         "chi_sim": false,
+         "chi_tra": false,
+-        "kor": false
++        "kor": false,
++        "rus": false
+     },
+     "pomodoro": {
+         "workTime": 1500,
+diff --git a/modules/services/Screenshot.qml b/modules/services/Screenshot.qml
+index 6c40363e2e4c3d8ee6909cf7f563eadd237a302c..321c67ad2b9ab4ecd00e7dc2a2e5161aaae74e86 100644
+--- a/modules/services/Screenshot.qml
++++ b/modules/services/Screenshot.qml
+@@ -18,6 +18,12 @@ QtObject {
+     property string lensPath: "/tmp/image.png"
+ 
+     property string captureMode: "normal"
++    property bool ocrReviewVisible: false
++    property bool ocrReviewBusy: false
++    property string ocrReviewText: ""
++    property string ocrReviewError: ""
++    property string ocrReviewScreenName: ""
++    property int ocrReviewRequest: 0
+ 
+     property string screenshotsDir: ""
+     property string finalPath: ""
+@@ -232,19 +238,44 @@ QtObject {
+         });
+     }
+ 
+-    // OCR / QR reuse the region selection overlay; results land in the
+-    // clipboard on the backend side and surface as internal notifications.
++    // OCR opens a review after capture; QR keeps its direct-copy action.
+     function _runRecognition(kind, x, y, w, h) {
+         root.captureMode = "normal";
+-        var method = kind === "qr" ? "ocr.barcode" : "ocr.text";
++        var method = "ocr.barcode";
+         var params = { x: x, y: y, width: w, height: h };
+         if (kind === "ocr") {
+             params.langs = root.ocrLangs();
++            root.ocrReviewText = "";
++            root.ocrReviewError = "";
++            root.ocrReviewBusy = true;
++            root.ocrReviewScreenName = Quickshell.screens.length ? Quickshell.screens[0].name : "";
++            for (var i = 0; i < Quickshell.screens.length; i++) {
++                var screen = Quickshell.screens[i];
++                if (x + w / 2 >= screen.x && x + w / 2 < screen.x + screen.width && y + h / 2 >= screen.y && y + h / 2 < screen.y + screen.height) {
++                    root.ocrReviewScreenName = screen.name;
++                    break;
++                }
++            }
++            root.ocrReviewRequest++;
++            root.ocrReviewVisible = false;
++        }
++        var request = root.ocrReviewRequest;
++        if (kind === "ocr") {
++            OCRBridge.call("region", params, (result, error) => {
++                if (request !== root.ocrReviewRequest) return;
++                root.ocrReviewVisible = true;
++                root.ocrReviewText = result && result.text ? result.text : "";
++                root.ocrReviewError = error ? "" + error : (root.ocrReviewText ? "" : I18n.t("screenshot.no_text"));
++                root.ocrReviewBusy = false;
++            }, () => {
++                if (request === root.ocrReviewRequest) root.ocrReviewVisible = true;
++            });
++            return;
+         }
+         BackendService.call(method, params, (result, error) => {
+             if (error) {
+                 Notifications.notifyInternal({
+-                    summary: kind === "qr" ? "QR Scan Error" : "OCR Error",
++                    summary: "QR Scan Error",
+                     body: "" + error
+                 });
+                 return;
+@@ -255,27 +286,42 @@ QtObject {
+                     summary: "QR/Barcode Result",
+                     body: found ? "Content copied to clipboard" : "No code detected"
+                 });
+-            } else {
+-                var hasText = result && result.text && result.text !== "";
+-                Notifications.notifyInternal({
+-                    summary: "OCR Result",
+-                    body: hasText ? "Text copied to clipboard" : "No text detected"
+-                });
+             }
+         });
+     }
+ 
++    function closeOCRReview() {
++        root.ocrReviewVisible = false;
++        root.ocrReviewRequest++;
++        root.ocrReviewBusy = false;
++        root.ocrReviewText = "";
++        root.ocrReviewError = "";
++    }
++
++    function recognizeImage(path, callback) {
++        OCRBridge.call("file", {path: path, langs: root.ocrLangs()}, (result, error) => {
++            var success = root._notifyTextRecognition(result, error);
++            if (callback) callback(success);
++        });
++    }
++
++    function _notifyTextRecognition(result, error) {
++        var hasText = !error && result && result.text && result.text !== "";
++        Notifications.notifyInternal({
++            summary: I18n.t(error ? "screenshot.ocr_error" : "screenshot.ocr_result"),
++            body: error ? "" + error : I18n.t(hasText ? "screenshot.text_copied" : "screenshot.no_text")
++        });
++        return !!hasText;
++    }
++
+     function ocrLangs() {
+         var cfg = Config.system.ocr;
+         var langs = [];
+         if (cfg) {
+-            if (cfg.eng !== false) langs.push("eng");
+-            if (cfg.spa !== false) langs.push("spa");
+-            if (cfg.lat === true) langs.push("lat");
+-            if (cfg.jpn === true) langs.push("jpn");
+-            if (cfg.chi_sim === true) langs.push("chi_sim");
+-            if (cfg.chi_tra === true) langs.push("chi_tra");
+-            if (cfg.kor === true) langs.push("kor");
++            var keys = Object.keys(cfg);
++            for (var i = 0; i < keys.length; i++) {
++                if (cfg[keys[i]] === true) langs.push(keys[i]);
++            }
+         } else {
+             langs = ["eng", "spa"];
+         }
+diff --git a/modules/tools/ScreenshotOverlay.qml b/modules/tools/ScreenshotOverlay.qml
+index bd7d38ecce3e3a8d56156647d724b634ea38a727..4f92586a54c1f056558679a1443340ab5b13c8e5 100644
+--- a/modules/tools/ScreenshotOverlay.qml
++++ b/modules/tools/ScreenshotOverlay.qml
+@@ -18,6 +18,7 @@ PanelWindow {
+     screen: targetScreen
+ 
+     property string imagePath: ""
++    property bool recognizingText: false
+ 
+     // Position: Bottom Left with margins
+     anchors {
+@@ -48,7 +49,7 @@ PanelWindow {
+         id: hideTimer
+         interval: 5000
+         repeat: false
+-        running: root.visible && !mouseAreaHover.containsMouse
++        running: root.visible && !mouseAreaHover.containsMouse && !root.recognizingText
+         onTriggered: root.imagePath = ""
+     }
+ 
+@@ -207,6 +208,27 @@ PanelWindow {
+                 }
+             }
+ 
++            ActionButton {
++                icon: root.recognizingText ? Icons.spinnerGap : Icons.textT
++                enabled: !root.recognizingText && root.imagePath !== ""
++                opacity: enabled ? 1 : 0.5
++                cursorShape: root.recognizingText ? Qt.BusyCursor : Qt.PointingHandCursor
++                Accessible.role: Accessible.Button
++                Accessible.name: I18n.t("screenshot.recognize_text")
++                onTriggered: {
++                    var path = root.imagePath;
++                    root.recognizingText = true;
++                    Screenshot.recognizeImage(path, success => {
++                        root.recognizingText = false;
++                        if (success && root.imagePath === path) root.imagePath = "";
++                    });
++                }
++                StyledToolTip {
++                    show: parent.containsMouse
++                    tooltipText: I18n.t(root.recognizingText ? "screenshot.recognizing_text" : "screenshot.recognize_text")
++                }
++            }
++
+             ActionButton {
+                 icon: Icons.disk
+                 onTriggered: {
+diff --git a/shell.qml b/shell.qml
+index 888996d37bac9a9c76c34e0610a913cf963298c0..94ca9cd6ac0727da89486c6d03ec08dab79902fd 100644
+--- a/shell.qml
++++ b/shell.qml
+@@ -205,6 +205,19 @@ ShellRoot {
+         }
+     }
+ 
++    // OCR confirmation, on the screen containing the selected region.
++    Variants {
++        model: Quickshell.screens
++        Loader {
++            id: ocrReviewLoader
++            required property ShellScreen modelData
++            active: SuspendManager.wakeReady && Screenshot.ocrReviewVisible && modelData.name === Screenshot.ocrReviewScreenName
++            sourceComponent: OCRTextReview {
++                targetScreen: ocrReviewLoader.modelData
++            }
++        }
++    }
++
+     // Screen recording tool
+     Loader {
+         id: screenRecordLoader
+diff --git a/translations/en.json b/translations/en.json
+index 208813c8eea250ddc757d771f811a290e9adc42d..48fe840d9b1d0484e15aa51ca8d544df3a321c23 100644
+--- a/translations/en.json
++++ b/translations/en.json
+@@ -469,6 +469,14 @@
+   "presets.update": "Update",
+   "presets.update_title": "Update \"%1\"",
+   "presets.visit_author": "Visit Author",
++  "screenshot.recognize_text": "Recognize text",
++  "screenshot.recognizing_text": "Recognizing text…",
++  "screenshot.ocr_error": "OCR error",
++  "screenshot.text_copied": "Text copied to clipboard",
++  "screenshot.no_text": "No text detected",
++  "screenshot.select_text": "Select the text to copy. You can also correct recognition errors.",
++  "screenshot.copy_selection": "Copy selection",
++  "screenshot.copy_all": "Copy all",
+   "screenshot.ocr_result": "OCR result",
+   "screenshot.qr_result": "QR/barcode result",
+   "screenshot.region": "Region",
+diff --git a/translations/es.json b/translations/es.json
+index 4753da79b1ae8b5af1c573cf1e60746445923b0a..88bd11feefa03502da556fdfa3c7828b04ddba8c 100644
+--- a/translations/es.json
++++ b/translations/es.json
+@@ -469,6 +469,14 @@
+   "presets.update": "Actualizar",
+   "presets.update_title": "Actualizar \"%1\"",
+   "presets.visit_author": "Visitar autor",
++  "screenshot.recognize_text": "Reconocer texto",
++  "screenshot.recognizing_text": "Reconociendo texto…",
++  "screenshot.ocr_error": "Error de OCR",
++  "screenshot.text_copied": "Texto copiado al portapapeles",
++  "screenshot.no_text": "No se detectó texto",
++  "screenshot.select_text": "Selecciona el texto que quieres copiar. También puedes corregir errores de reconocimiento.",
++  "screenshot.copy_selection": "Copiar selección",
++  "screenshot.copy_all": "Copiar todo",
+   "screenshot.ocr_result": "Resultado de OCR",
+   "screenshot.qr_result": "Resultado de QR/código de barras",
+   "screenshot.region": "Región",
+diff --git a/translations/ru.json b/translations/ru.json
+index 71b085282cdb90959ccec84f2c0c0167d14db6b1..59399a17031103c82d00c92281c255d467635b63 100644
+--- a/translations/ru.json
++++ b/translations/ru.json
+@@ -465,6 +465,14 @@
+   "presets.update": "Обновить",
+   "presets.update_title": "Обновить \"%1\"",
+   "presets.visit_author": "Посетить автора",
++  "screenshot.recognize_text": "Распознать текст",
++  "screenshot.recognizing_text": "Распознавание текста…",
++  "screenshot.ocr_error": "Ошибка OCR",
++  "screenshot.text_copied": "Текст скопирован в буфер обмена",
++  "screenshot.no_text": "Текст не найден",
++  "screenshot.select_text": "Выдели текст для копирования. Здесь также можно исправить ошибки распознавания.",
++  "screenshot.copy_selection": "Копировать выделенное",
++  "screenshot.copy_all": "Копировать всё",
+   "screenshot.ocr_result": "Результат OCR",
+   "screenshot.qr_result": "Результат QR/штрихкода",
+   "screenshot.region": "Область",

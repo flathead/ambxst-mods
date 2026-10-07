@@ -1,0 +1,66 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Axenide/Ambxst/dev/docs/mods/manifest.schema.json",
+  "manifestVersion": 1,
+  "id": "community.ocr-text-selection",
+  "name": "OCR text selection",
+  "version": "1.0.0",
+  "description": "Improves multilingual OCR, adds screenshot preview recognition, and lets you select or edit recognized text before copying.",
+  "license": "AGPL-3.0-only",
+  "author": "flathead",
+  "authorUrl": "https://github.com/flathead",
+  "homepage": "https://github.com/flathead/ambxst-mods/tree/main/packages/ocr-text-selection",
+  "compatibility": {
+    "api": 1,
+    "ambxst": ">=1.3.9 <1.3.10",
+    "testedBaseCommits": [
+      "3705f278f24a74718fc23772b47044e96701d53a"
+    ]
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "commands": [
+    "python3",
+    "tesseract",
+    "wl-copy",
+    "ambxst"
+  ],
+  "permissions": [
+    "Captures the selected screen region through the Ambxst screenshot service",
+    "Reads a saved screenshot when you choose its OCR action",
+    "Runs local Tesseract recognition with the language models selected in settings",
+    "Writes recognized text to the clipboard after confirmation, or from the screenshot preview action",
+    "Creates temporary captures in a private directory and removes them after reading"
+  ],
+  "operations": [
+    {
+      "type": "overlay",
+      "source": "payload/modules/tools/OCRTextReview.qml",
+      "target": "modules/tools/OCRTextReview.qml"
+    },
+    {
+      "type": "overlay",
+      "source": "payload/modules/services/OCRBridge.qml",
+      "target": "modules/services/OCRBridge.qml"
+    },
+    {
+      "type": "overlay",
+      "source": "payload/scripts/ocr_text_selection.py",
+      "target": "scripts/ocr_text_selection.py"
+    },
+    {
+      "type": "patch",
+      "source": "patches/feature.patch"
+    }
+  ],
+  "changelog": "CHANGELOG.md",
+  "deprecated": false,
+  "localization": {
+    "mode": "translated",
+    "defaultLanguage": "en",
+    "languages": [
+      "en",
+      "ru",
+      "es"
+    ]
+  }
+}
