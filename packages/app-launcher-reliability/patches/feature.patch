@@ -1,0 +1,152 @@
+diff --git a/modules/bar/IntegratedDockAppButton.qml b/modules/bar/IntegratedDockAppButton.qml
+index 0387f080..32df75dc 100644
+--- a/modules/bar/IntegratedDockAppButton.qml
++++ b/modules/bar/IntegratedDockAppButton.qml
+@@ -21,7 +21,7 @@ Button {
+ 
+     readonly property bool isVertical: orientation === "vertical"
+     readonly property bool isSeparator: appToplevel?.appId === "SEPARATOR"
+-    readonly property var desktopEntry: (isSeparator || !appToplevel) ? null : DesktopEntries.heuristicLookup(appToplevel.appId)
++    readonly property var desktopEntry: (isSeparator || !appToplevel) ? null : AppSearch.getDesktopEntry(appToplevel.appId)
+     readonly property bool appIsActive: !isSeparator && (appToplevel?.toplevels?.some(t => t.activated === true) ?? false)
+     readonly property bool appIsRunning: !isSeparator && (appToplevel?.toplevelCount ?? 0) > 0
+ 
+diff --git a/modules/dock/DockAppButton.qml b/modules/dock/DockAppButton.qml
+index 3132417b..43c0f08e 100644
+--- a/modules/dock/DockAppButton.qml
++++ b/modules/dock/DockAppButton.qml
+@@ -28,7 +28,7 @@ Button {
+     readonly property bool isVertical: isLeft || isRight
+ 
+     readonly property bool isSeparator: appToplevel?.appId === "SEPARATOR"
+-    readonly property var desktopEntry: (isSeparator || !appToplevel) ? null : DesktopEntries.heuristicLookup(appToplevel.appId)
++    readonly property var desktopEntry: (isSeparator || !appToplevel) ? null : AppSearch.getDesktopEntry(appToplevel.appId)
+     readonly property bool appIsActive: !isSeparator && (appToplevel?.toplevels?.some(t => t.activated === true) ?? false)
+     readonly property bool appIsRunning: !isSeparator && (appToplevel?.toplevelCount ?? 0) > 0
+ 
+diff --git a/modules/services/AppSearch.qml b/modules/services/AppSearch.qml
+index 8829155f..952c7b4c 100644
+--- a/modules/services/AppSearch.qml
++++ b/modules/services/AppSearch.qml
+@@ -9,6 +9,22 @@ Singleton {
+     id: root
+ 
+     property var iconCache: ({})
++    property int desktopEntriesRevision: 0
++
++    Connections {
++        target: DesktopEntries
++        function onApplicationsChanged() {
++            root.iconCache = ({});
++            root.desktopEntriesRevision++;
++        }
++    }
++
++    // Lookup functions do not establish a QML dependency on the entry registry.
++    // Reevaluate consumers when a rescan replaces DesktopEntry objects.
++    function getDesktopEntry(appId) {
++        void desktopEntriesRevision;
++        return appId ? DesktopEntries.heuristicLookup(appId) : null;
++    }
+     
+     function getCachedIcon(str) {
+         if (!str) return "image-missing";
+@@ -51,11 +67,21 @@ Singleton {
+     function getIconFromDesktopEntry(className) {
+         if (!className || className.length === 0) return null;
+ 
++        const exactEntry = getDesktopEntry(className);
++        if (exactEntry && exactEntry.icon) return exactEntry.icon;
++
+         const normalizedClassName = className.toLowerCase();
+ 
++        // Prefer application identity over shortcuts invoking the same executable.
++        for (const app of list) {
++            if (app.name && app.name.toLowerCase() === normalizedClassName) {
++                return app.icon || "application-x-executable";
++            }
++        }
++
+         for (let i = 0; i < list.length; i++) {
+             const app = list[i];
+-            if (app.command && app.command.length > 0) {
++            if (app.command && app.command.length === 1) {
+                 const executableLower = app.command[0].toLowerCase();
+                 if (executableLower === normalizedClassName) {
+                     return app.icon || "application-x-executable";
+@@ -137,8 +163,11 @@ Singleton {
+ 
+ 
+     
+-    readonly property list<DesktopEntry> list: Array.from(DesktopEntries.applications.values)
+-        .sort((a, b) => a.name.localeCompare(b.name))
++    readonly property list<DesktopEntry> list: {
++        void desktopEntriesRevision;
++        return Array.from(DesktopEntries.applications.values)
++            .sort((a, b) => a.name.localeCompare(b.name));
++    }
+     
+     // Index structure: [{ name: "lower", command: "lower", keywords: ["lower"], original: appObject }, ...]
+     property var searchIndex: []
+@@ -177,7 +206,13 @@ Singleton {
+     }
+     
+ 
+-    function launchApp(app) {
++    function launchApp(appOrId) {
++        const appId = typeof appOrId === "string" ? appOrId : appOrId?.id;
++        const app = getDesktopEntry(appId);
++        if (!app) {
++            console.warn("Cannot launch missing desktop entry:", appId);
++            return;
++        }
+         const path = app.fileName || app.path || app.filePath;
+         
+         if (path && path.toString().endsWith('.desktop')) {
+@@ -217,6 +252,7 @@ Singleton {
+         
+         for (let i = 0; i < list.length; i++) {
+             const app = list[i];
++            const appId = app.id;
+             const usageScore = UsageTracker.getUsageScore(app.id);
+             // Use getCachedIcon which uses iconCache, but we want a simpler validater here maybe?
+             // validateIcon is "safer" but slower. Let's cache the validation result too.
+@@ -240,7 +276,7 @@ Singleton {
+                 runInTerminal: app.runInTerminal || false,
+                 usageScore: usageScore,
+                 execute: () => {
+-                    launchApp(app);
++                    launchApp(appId);
+                 }
+             });
+         }
+@@ -320,6 +356,7 @@ Singleton {
+             
+             if (matchFound) {
+                 const app = entry.original;
++                const appId = app.id;
+                 const usageScore = UsageTracker.getUsageScore(app.id);
+                 let iconToUse = app.icon || "application-x-executable";
+                 if (iconCache[iconToUse]) {
+@@ -341,7 +378,7 @@ Singleton {
+                     runInTerminal: app.runInTerminal || false,
+                     usageScore: usageScore,
+                     execute: () => {
+-                        launchApp(app);
++                        launchApp(appId);
+                     }
+                 });
+             }
+diff --git a/modules/services/TaskbarApps.qml b/modules/services/TaskbarApps.qml
+index e987fa25..990efefb 100644
+--- a/modules/services/TaskbarApps.qml
++++ b/modules/services/TaskbarApps.qml
+@@ -36,7 +36,7 @@ Singleton {
+     // Get entry
+     function getDesktopEntry(appId) {
+         if (!appId) return null;
+-        return DesktopEntries.heuristicLookup(appId) || null;
++        return AppSearch.getDesktopEntry(appId);
+     }
+ 
+     // Launch

@@ -88,7 +88,40 @@ time out, and sharing requires confirmation.
 
 ## OCR text selection
 
-[OCR text selection](https://github.com/flathead/ambxst-mods/tree/main/packages/ocr-text-selection) improves multilingual screen recognition and adds a text action to screenshot previews. From the toolbar, select an area, review or edit the recognized text, and copy the part you need. Drag the result window by its header to move it. The mod works with the stock Ambxst 1.3.9 binary and requires Python 3 with Pillow, Tesseract, `wl-copy`, and the models for your selected languages. It uses the existing OCR settings without a preferred language.
+[OCR text selection](https://github.com/flathead/ambxst-mods/tree/main/packages/ocr-text-selection) improves multilingual screen recognition and adds a text action to screenshot previews. From the toolbar, select an area, review or edit the recognized text, and copy the part you need. Drag the result window by its header to move it. The mod supports stock Ambxst 1.3.x starting with 1.3.9 and requires Python 3 with Pillow, Tesseract, `wl-copy`, and the models for your selected languages. It uses the existing OCR settings without a preferred language.
+
+## Launcher reliability
+
+[App launcher reliability](packages/app-launcher-reliability/README.md) fixes stale
+desktop-entry references after Quickshell rescans application directories. It
+keeps launch callbacks usable and prevents a Steam game shortcut from supplying
+the Steam client's icon. It is a separate optional package with the stable ID
+`local.app-launcher-reliability` and supports Ambxst 1.3.x starting with 1.3.9.
+
+## Compatibility checks
+
+All packages are checked separately and together against the supported releases.
+The [compatibility report](docs/compatibility.md) distinguishes source composition
+from runtime checks and lists the tested versions. Calendar initialization does
+not patch the base preset copier, so the 1.3.12 change to that implementation
+does not conflict with the mod.
+
+Run the same native-manager checks without touching installed mods or settings:
+
+```bash
+python3 scripts/check-compatibility.py --source /path/to/Ambxst
+python3 scripts/check-compatibility.py --source /path/to/Ambxst --refs latest origin/dev --require-all
+python3 scripts/check-launcher.py --source /path/to/Ambxst
+```
+
+The source checkout must include the release tags. Composition checks require
+an Ambxst 1.3.12-or-newer binary; pass its path with `--ambxst` when it is not on
+`PATH`. The launcher regression check also requires Quickshell. CI repeats the
+composition and helper checks on pushes, pull requests, manual runs, and weekly.
+It resolves the latest stable release tag and tests current `dev`, so a new
+upstream version can expose a conflict before packages are updated. Version
+ranges below 1.4.0 allow compatible 1.3.x releases; they do not guarantee that
+every future upstream change will apply cleanly.
 
 ## Languages and release metadata
 

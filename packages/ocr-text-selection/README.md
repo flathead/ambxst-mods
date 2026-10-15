@@ -6,7 +6,7 @@ The helper passes each enabled language flag from Ambxst settings to Tesseract. 
 
 ## Install
 
-Requires stock Ambxst 1.3.9, Python 3 with Pillow, Tesseract, `wl-copy`, and the traineddata files for your selected languages. This mod uses the stock screenshot IPC service and a Python helper; you do not need a patched Ambxst binary. Install Pillow through your distribution, for example `python-pillow` on Arch or `python3-pillow` on Fedora. The manager checks executables; it cannot check Python imports or traineddata files. The review window reports missing dependencies when you run OCR.
+Requires stock Ambxst 1.3.x starting with 1.3.9, Python 3 with Pillow, Tesseract, `wl-copy`, and the traineddata files for your selected languages. This mod uses the stock screenshot IPC service and a Python helper; you do not need a patched Ambxst binary. Install Pillow through your distribution, for example `python-pillow` on Arch or `python3-pillow` on Fedora. The manager checks executables; it cannot check Python imports or traineddata files. The review window reports missing dependencies when you run OCR.
 
 ```bash
 ambxst mods install https://github.com/flathead/ambxst-mods/tree/main/packages/ocr-text-selection
@@ -14,7 +14,10 @@ ambxst mods enable community.ocr-text-selection
 ambxst reload
 ```
 
-Run this package with the stock source tree. Its compatibility range covers the version tested here; an upstream release that incorporates the feature should use the core implementation instead.
+Run this package with the stock source tree. Source composition is checked on
+1.3.9 through 1.3.12, with runtime loading checked on 1.3.12. CI also checks the
+latest release and development sources. An upstream release that incorporates
+the feature should use the core implementation instead.
 
 ## Validation
 

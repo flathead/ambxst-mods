@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.10 - 2026-10-15
+
+- Verify individual and combined composition on Ambxst 1.3.8 through 1.3.12 using the native mod manager.
+
 ## 1.0.9
 
 - Size the popup to its content. It scrolls only when the screen has no room for the full menu.

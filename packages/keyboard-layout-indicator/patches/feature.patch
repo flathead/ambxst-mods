@@ -288,7 +288,7 @@ new file mode 100644
 index 00000000..641dbe7e
 --- /dev/null
 +++ b/modules/services/KeyboardLayoutService.qml
-@@ -0,0 +1,258 @@
+@@ -0,0 +1,283 @@
 +pragma Singleton
 +
 +import QtQuick
@@ -309,8 +309,11 @@ index 00000000..641dbe7e
 +    property var availableLayouts: []
 +    // Current layout index
 +    property int currentIndex: 0
-+    // Main keyboard name
-+    property string mainKeyboard: ""
++    // Keyboard whose layout the indicator currently represents
++    property string trackedKeyboard: ""
++    // Last known layout of every device. XKB shortcuts can change a keyboard
++    // other than Hyprland's "main" device, especially with virtual keyboards.
++    property var deviceIndices: ({})
 +
 +    // Dynamic map of layout code → display name, built as layouts are activated
 +    property var keymapNames: ({})
@@ -326,14 +329,15 @@ index 00000000..641dbe7e
 +    }
 +
 +    function switchLayout() {
-+        if (!mainKeyboard) return;
-+        switchProcess.command = ["hyprctl", "switchxkblayout", mainKeyboard, "next"];
-+        switchProcess.running = true;
++        if (!availableLayouts.length) return;
++        setLayout((currentIndex + 1) % availableLayouts.length);
 +    }
 +
 +    function setLayout(index) {
-+        if (!mainKeyboard) return;
-+        switchProcess.command = ["hyprctl", "switchxkblayout", mainKeyboard, String(index)];
++        if (!availableLayouts.length || index < 0 || index >= availableLayouts.length || switchProcess.running) return;
++        // Keep physical and virtual keyboards in sync. "next" would preserve
++        // any existing divergence between their layout indices.
++        switchProcess.command = ["hyprctl", "switchxkblayout", "all", String(index)];
 +        switchProcess.running = true;
 +    }
 +
@@ -375,10 +379,28 @@ index 00000000..641dbe7e
 +            const devices = JSON.parse(jsonStr);
 +            const keyboards = devices.keyboards || [];
 +
++            const previousIndices = root.deviceIndices;
++            const nextIndices = {};
++            const changed = [];
++            for (const keyboard of keyboards) {
++                if (!keyboard.name || !keyboard.layout) continue;
++                nextIndices[keyboard.name] = keyboard.active_layout_index ?? 0;
++                if (Object.prototype.hasOwnProperty.call(previousIndices, keyboard.name)
++                        && previousIndices[keyboard.name] !== nextIndices[keyboard.name])
++                    changed.push(keyboard);
++            }
++            root.deviceIndices = nextIndices;
++
 +            let kb = null;
-+            if (root.mainKeyboard)
-+                kb = keyboards.find(k => k.name === root.mainKeyboard);
-+            if (!kb) kb = keyboards.find(k => k.main === true);
++            // Follow the keyboard that actually changed, while keeping the
++            // tracked device when a command updates multiple devices at once.
++            if (changed.length === 1) kb = changed[0];
++            if (!kb && changed.length > 1)
++                kb = changed.find(k => k.name === root.trackedKeyboard)
++                    || changed.find(k => k.main === true) || changed[0];
++            if (!kb && root.trackedKeyboard)
++                kb = keyboards.find(k => k.name === root.trackedKeyboard && k.layout);
++            if (!kb) kb = keyboards.find(k => k.main === true && k.layout);
 +            if (!kb) kb = keyboards.find(k => k.layout && k.layout.length > 0);
 +            if (!kb) return;
 +
@@ -387,7 +409,7 @@ index 00000000..641dbe7e
 +            const previousIndex = root.currentIndex;
 +            const hadDeviceState = root.hasDeviceState;
 +
-+            root.mainKeyboard = kb.name;
++            root.trackedKeyboard = kb.name;
 +            root.availableLayouts = kb.layout.split(",").map(l => l.trim());
 +            root.currentIndex = kb.active_layout_index || 0;
 +            root.currentLayout = root.availableLayouts[root.currentIndex] || "";
@@ -540,7 +562,10 @@ index 00000000..641dbe7e
 +    // Switch process
 +    Process {
 +        id: switchProcess
-+        // Layout update comes via socket event + poll
++        onExited: {
++            if (!refreshProcess.running)
++                refreshProcess.running = true;
++        }
 +    }
 +
 +    Component.onDestruction: {

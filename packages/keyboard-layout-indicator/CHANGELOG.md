@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.3 - 2026-10-15
+
+- Verify individual and combined composition on Ambxst 1.3.8 through 1.3.12 using the native mod manager.
+
+## 1.2.2 - 2026-10-04
+
+- Follow the keyboard whose layout actually changed, including physical and virtual devices that differ from Hyprland's main keyboard.
+- Switch all keyboards to the same layout when using the bar button or picker, and refresh the indicator as soon as the command completes.
+
 ## 1.2.1 - 2026-10-03
 
 - Align the on-screen card to physical pixels and render its text above the shadow layer, so longer layout names stay sharp.

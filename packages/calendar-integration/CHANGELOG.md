@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.4 - 2026-10-15
+
+- Initialize calendar defaults independently of the base preset copier, preserving compatibility with Ambxst 1.3.8 through 1.3.12.
+
 ## 1.1.3 - 2026-09-25
 
 - Move Calendar settings to System > Calendar. The mod no longer adds a Settings sidebar entry, so it cannot take another mod's position.

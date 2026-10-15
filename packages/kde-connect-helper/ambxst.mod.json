@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "id": "community.kde-connect-helper",
   "name": "KDE Connect helper",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Adds a KDE Connect status button, device actions, guided installation, and portable user autostart controls.",
   "license": "AGPL-3.0-only",
   "author": "flathead",
@@ -16,7 +16,12 @@
       "2a704c438ddc0b94a11f4e4cf32a16220b62141f",
       "148bb33b2ede68377caad5eb755e32071d7e9df7",
       "7d2bfbf2e1edd8a64ef16476ef6013b9c7e85fbc",
-      "966fc21fcfd767003daae295d38cda39c449b82d"
+      "966fc21fcfd767003daae295d38cda39c449b82d",
+      "c62a7acc443dbb1c9045e83466402528cc522af2",
+      "3705f278f24a74718fc23772b47044e96701d53a",
+      "bc60230283a3822eec2e23c949f44990480d0f43",
+      "9a9fb6886138931b0825bb2066ac5595ab11a139",
+      "1e1a56493582f34e5e5593bc9d3c2f87246266fb"
     ]
   },
   "commands": [

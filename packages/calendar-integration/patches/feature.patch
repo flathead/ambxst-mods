@@ -1,5 +1,5 @@
 diff --git a/config/Config.qml b/config/Config.qml
-index ab5ce35c..67bbbc9a 100644
+index ab5ce35c..c87367fb 100644
 --- a/config/Config.qml
 +++ b/config/Config.qml
 @@ -22,6 +22,7 @@ import "defaults/system.js" as SystemDefaults
@@ -22,15 +22,7 @@ index ab5ce35c..67bbbc9a 100644
  
      // Compatibility aliases
      property alias loader: themeLoader
-@@ -87,6 +89,7 @@ Singleton {
-             "cp -n '" + root.presetDir + "/dock.json' '" + root.configDir + "/dock.json' 2>/dev/null || true; " +
-             "cp -n '" + root.presetDir + "/ai.json' '" + root.configDir + "/ai.json' 2>/dev/null || true; " +
-             "cp -n '" + root.presetDir + "/system.json' '" + root.configDir + "/system.json' 2>/dev/null || true; " +
-+            "cp -n '" + root.presetDir + "/calendar.json' '" + root.configDir + "/calendar.json' 2>/dev/null || true; " +
-             "echo 'Preset files copied if missing'"
-         ]
-     }
-@@ -1236,6 +1239,57 @@ Singleton {
+@@ -1236,6 +1238,57 @@ Singleton {
          }
      }
  
@@ -88,7 +80,7 @@ index ab5ce35c..67bbbc9a 100644
      // Keybinds (binds.json)
      // Timer to repair keybinds after initial load
      Timer {
-@@ -3542,6 +3596,9 @@ Singleton {
+@@ -3542,6 +3595,9 @@ Singleton {
      // General configuration
      property QtObject general: generalLoader.adapter
  
@@ -98,7 +90,7 @@ index ab5ce35c..67bbbc9a 100644
      // Module save functions
      function saveBar() {
          barLoader.writeAdapter();
-@@ -3588,6 +3645,9 @@ Singleton {
+@@ -3588,6 +3644,9 @@ Singleton {
      function saveGeneral() {
          generalLoader.writeAdapter();
      }

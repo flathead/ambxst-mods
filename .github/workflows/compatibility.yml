@@ -1,0 +1,48 @@
+name: Ambxst compatibility
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 5 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Axenide/Ambxst
+          ref: dev
+          path: upstream
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: upstream/backend/go.mod
+          cache-dependency-path: upstream/backend/go.sum
+      - name: Build the native mod manager
+        working-directory: upstream/backend
+        run: CGO_ENABLED=0 go build -mod=vendor -o "$RUNNER_TEMP/ambxst" ./cmd/ambxst
+      - name: Check supported releases
+        run: python3 scripts/check-compatibility.py --source upstream --ambxst "$RUNNER_TEMP/ambxst" --output compatibility-releases.json
+      - name: Check the latest release and current development sources
+        run: python3 scripts/check-compatibility.py --source upstream --ambxst "$RUNNER_TEMP/ambxst" --refs latest HEAD --require-all --output compatibility-current.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install helper test dependencies
+        run: python3 -m pip install Pillow
+      - name: Check helpers
+        run: |
+          python3 -m unittest discover -s packages/kde-connect-helper/tests -v
+          python3 -m unittest discover -s packages/ocr-text-selection/tests -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compatibility-reports
+          path: compatibility-*.json

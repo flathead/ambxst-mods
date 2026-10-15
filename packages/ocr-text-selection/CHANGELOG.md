@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 - 2026-10-15
+
+- Verify individual and combined composition on Ambxst 1.3.9 through 1.3.12 and runtime loading on 1.3.12.
+- Allow compatible 1.3.x releases; scheduled checks test the latest release and development sources.
+
 ## 1.0.0
 
 - Pass all enabled OCR language flags through the same recognition path.

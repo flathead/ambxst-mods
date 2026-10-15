@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "id": "community.ocr-text-selection",
   "name": "OCR text selection",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Improves multilingual OCR, adds screenshot preview recognition, and lets you select or edit recognized text before copying.",
   "license": "AGPL-3.0-only",
   "author": "flathead",
@@ -11,9 +11,12 @@
   "homepage": "https://github.com/flathead/ambxst-mods/tree/main/packages/ocr-text-selection",
   "compatibility": {
     "api": 1,
-    "ambxst": ">=1.3.9 <1.3.10",
+    "ambxst": ">=1.3.9 <1.4.0",
     "testedBaseCommits": [
-      "3705f278f24a74718fc23772b47044e96701d53a"
+      "3705f278f24a74718fc23772b47044e96701d53a",
+      "1e1a56493582f34e5e5593bc9d3c2f87246266fb",
+      "bc60230283a3822eec2e23c949f44990480d0f43",
+      "9a9fb6886138931b0825bb2066ac5595ab11a139"
     ]
   },
   "dependencies": [],
