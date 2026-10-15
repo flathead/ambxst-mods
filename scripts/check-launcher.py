@@ -7,6 +7,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import time
 
 
 def main():
@@ -59,8 +60,14 @@ def main():
         print(output, end="")
         if result.returncode or "FAIL" in output or output.count("PASS") != 6:
             raise SystemExit("Quickshell rescan assertions failed")
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline and not old_marker.exists():
+            if marker.exists() and marker.read_text() == "xx":
+                break
+            time.sleep(0.05)
         if old_marker.exists() or not marker.exists() or marker.read_text() != "xx":
-            raise SystemExit("Saved launcher/search callbacks did not both use the updated command")
+            actual = marker.read_text() if marker.exists() else "missing"
+            raise SystemExit(f"Saved callbacks did not both use the updated command: marker={actual!r}, old={old_marker.exists()}")
         print("PASS both saved callbacks launch the updated desktop command")
 
 
