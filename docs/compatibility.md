@@ -7,7 +7,7 @@ The latest upstream release and `dev` both resolve to Ambxst 1.3.12,
 | --- | --- | --- |
 | Audio device switcher | 1.1.2 | 1.3.8–1.3.12 |
 | Bar resource monitor | 1.1.3 | 1.3.8–1.3.12 |
-| Calendar integration | 1.1.4 | 1.3.8–1.3.12 |
+| Calendar integration | 1.2.0 | 1.3.8–1.3.12 |
 | KDE Connect helper | 1.0.10 | 1.3.8–1.3.12 |
 | Keyboard layout indicator | 1.2.3 | 1.3.8–1.3.12 |
 | Volume scroll | 1.1.2 | 1.3.8–1.3.12 |
@@ -32,6 +32,12 @@ Thirty Python helper tests passed locally, including real multilingual OCR.
 The Quickshell regression test for launcher reliability passed six icon and
 registry assertions and verified that both saved launch callbacks used the
 updated desktop command.
+
+Calendar 1.2.0 passed 13 date-selection cases in four time zones: UTC, Moscow,
+New York and Honolulu. The QML integration check exercised the new setting with
+keyboard input, Save and reset, a temporary settings file, translated bar labels
+and clock-driven event changes. The fixture used the package's service and
+controls with stub theme and container components.
 
 CI repeats the composition and helper checks on repository changes and weekly.
 It checks the latest stable tag and current `dev` in addition to these known

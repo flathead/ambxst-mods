@@ -41,6 +41,14 @@ jobs:
         run: |
           python3 -m unittest discover -s packages/kde-connect-helper/tests -v
           python3 -m unittest discover -s packages/ocr-text-selection/tests -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check calendar event selection
+        run: |
+          for timezone in UTC Europe/Moscow America/New_York Pacific/Honolulu; do
+            TZ="$timezone" node --test packages/calendar-integration/tests/selection.test.cjs
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:

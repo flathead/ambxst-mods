@@ -1,5 +1,5 @@
 diff --git a/config/Config.qml b/config/Config.qml
-index ab5ce35c..c87367fb 100644
+index 547cb5eb..e760af49 100644
 --- a/config/Config.qml
 +++ b/config/Config.qml
 @@ -22,6 +22,7 @@ import "defaults/system.js" as SystemDefaults
@@ -22,7 +22,7 @@ index ab5ce35c..c87367fb 100644
  
      // Compatibility aliases
      property alias loader: themeLoader
-@@ -1236,6 +1238,57 @@ Singleton {
+@@ -1261,6 +1263,58 @@ Singleton {
          }
      }
  
@@ -65,6 +65,7 @@ index ab5ce35c..c87367fb 100644
 +            property bool notifications: true
 +            property bool barIndicator: true
 +            property bool barShowNextEvent: false
++            property bool barIncludeAllDay: false
 +            property int defaultReminder: 15
 +            property string googleClientId: ""
 +            property string googleClientSecret: ""
@@ -80,7 +81,7 @@ index ab5ce35c..c87367fb 100644
      // Keybinds (binds.json)
      // Timer to repair keybinds after initial load
      Timer {
-@@ -3542,6 +3595,9 @@ Singleton {
+@@ -3625,6 +3679,9 @@ Singleton {
      // General configuration
      property QtObject general: generalLoader.adapter
  
@@ -90,7 +91,7 @@ index ab5ce35c..c87367fb 100644
      // Module save functions
      function saveBar() {
          barLoader.writeAdapter();
-@@ -3588,6 +3644,9 @@ Singleton {
+@@ -3671,6 +3728,9 @@ Singleton {
      function saveGeneral() {
          generalLoader.writeAdapter();
      }
@@ -102,10 +103,10 @@ index ab5ce35c..c87367fb 100644
      function isHexColor(colorValue) {
 diff --git a/config/defaults/calendar.js b/config/defaults/calendar.js
 new file mode 100644
-index 00000000..c226de17
+index 00000000..2b476c13
 --- /dev/null
 +++ b/config/defaults/calendar.js
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,19 @@
 +.pragma library
 +
 +var data = {
@@ -114,6 +115,7 @@ index 00000000..c226de17
 +    "notifications": true,
 +    "barIndicator": true,
 +    "barShowNextEvent": false,
++    "barIncludeAllDay": false,
 +    "defaultReminder": 15,
 +    "soundOnArrival": true,
 +    "arrivalSoundPath": "",
@@ -126,10 +128,10 @@ index 00000000..c226de17
 +}
 diff --git a/modules/bar/BarCalendarIndicator.qml b/modules/bar/BarCalendarIndicator.qml
 new file mode 100644
-index 00000000..0c695325
+index 00000000..8db0cb66
 --- /dev/null
 +++ b/modules/bar/BarCalendarIndicator.qml
-@@ -0,0 +1,402 @@
+@@ -0,0 +1,409 @@
 +pragma ComponentBehavior: Bound
 +import QtQuick
 +import QtQuick.Layouts
@@ -138,6 +140,7 @@ index 00000000..0c695325
 +import qs.modules.theme
 +import qs.modules.globals
 +import qs.config
++import "../services/CalendarEventSelection.js" as CalendarEventSelection
 +
 +Item {
 +    id: root
@@ -165,8 +168,14 @@ index 00000000..0c695325
 +
 +    readonly property bool showNextEvent: CalendarService.barShowNextEvent
 +    readonly property bool alwaysShow: CalendarService.barAlwaysShow
-+    readonly property var nextEvent: showNextEvent ? CalendarService.nextUpcomingEvent() : null
-+    property var todayEvents: CalendarService.todayEvents()
++    readonly property var nextEvent: {
++        void _tick;
++        return showNextEvent ? CalendarService.nextUpcomingEvent() : null;
++    }
++    readonly property var todayEvents: {
++        void _tick;
++        return CalendarService.todayEvents();
++    }
 +
 +    // Split today's events into upcoming (allDay + future timed) and past (past timed)
 +    readonly property var upcomingTodayEvents: {
@@ -191,14 +200,6 @@ index 00000000..0c695325
 +        if (alwaysShow) return todayEvents.length > 0;
 +        return upcomingTodayEvents.length > 0;
 +    }
-+
-+    Connections {
-+        target: CalendarService
-+        function onEventsChanged() {
-+            root.todayEvents = CalendarService.todayEvents();
-+        }
-+    }
-+
 +
 +    visible: root.hasEvents
 +
@@ -516,6 +517,14 @@ index 00000000..0c695325
 +        if (!nextEvent) return "";
 +        try {
 +            const now = new Date();
++            if (nextEvent.allDay) {
++                const range = CalendarEventSelection.allDayRange(nextEvent);
++                if (!range) return "";
++                if (range.start <= now)
++                    return root._t("calendar.event.all_day", "All day");
++                const date = range.start.toLocaleDateString(Qt.locale(I18n.resolvedLanguage), "d MMM");
++                return root._t("calendar.bar.all_day_on", "All day · %1", date);
++            }
 +            const start = new Date(nextEvent.start);
 +            const diff = Math.max(0, Math.floor((start.getTime() - now.getTime()) / 60000));
 +            if (diff < 1) return root._t("calendar.bar.time_now", "now");
@@ -592,15 +601,16 @@ index eb6e9ccd..b093572b 100644
      property bool themeHasChanges: false
 diff --git a/modules/services/CalendarService.qml b/modules/services/CalendarService.qml
 new file mode 100644
-index 00000000..33c11d6f
+index 00000000..08006fdd
 --- /dev/null
 +++ b/modules/services/CalendarService.qml
-@@ -0,0 +1,325 @@
+@@ -0,0 +1,309 @@
 +pragma Singleton
 +import QtQuick
 +import Quickshell
 +import Quickshell.Io
 +import qs.config
++import "CalendarEventSelection.js" as CalendarEventSelection
 +import qs.modules.globals
 +import qs.modules.theme
 +pragma ComponentBehavior: Bound
@@ -628,6 +638,7 @@ index 00000000..33c11d6f
 +    readonly property bool notificationsEnabled: Config.calendar ? Config.calendar.notifications !== false : true
 +    readonly property bool barIndicatorEnabled: Config.calendar ? Config.calendar.barIndicator !== false : true
 +    readonly property bool barShowNextEvent: Config.calendar ? (Config.calendar.barShowNextEvent === true) : false
++    readonly property bool barIncludeAllDay: Config.calendar ? (Config.calendar.barIncludeAllDay === true) : false
 +    readonly property bool barAlwaysShow: Config.calendar ? (Config.calendar.barAlwaysShow === true) : false
 +    readonly property int defaultReminder: Config.calendar ? (Config.calendar.defaultReminder || 15) : 15
 +    readonly property bool soundOnArrival: Config.calendar ? Config.calendar.soundOnArrival !== false : true
@@ -744,25 +755,7 @@ index 00000000..33c11d6f
 +    }
 +
 +    function nextUpcomingEvent() {
-+        const now = new Date();
-+        let closest = null;
-+        let closestTime = Infinity;
-+        for (let i = 0; i < events.length; i++) {
-+            const ev = events[i];
-+            if (ev.allDay) continue;
-+            try {
-+                const start = new Date(ev.start);
-+                const end = ev.end ? new Date(ev.end) : start;
-+                // Include in-progress events (start <= now < end) — rank them by start time
-+                const inProgress = start <= now && now < end;
-+                const diff = inProgress ? 0 : (start.getTime() - now.getTime());
-+                if ((inProgress || diff > 0) && diff < closestTime) {
-+                    closestTime = diff;
-+                    closest = ev;
-+                }
-+            } catch (e) { /* unparseable date, skip */ }
-+        }
-+        return closest;
++        return CalendarEventSelection.nextEvent(events, barIncludeAllDay, new Date());
 +    }
 +
 +    function todayEvents() {
@@ -936,10 +929,10 @@ index 3333506c..5dbbabf9 100644
      readonly property string alarm: ""
 diff --git a/modules/widgets/dashboard/controls/CalendarPanel.qml b/modules/widgets/dashboard/controls/CalendarPanel.qml
 new file mode 100644
-index 00000000..e986ff42
+index 00000000..3e97c9e9
 --- /dev/null
 +++ b/modules/widgets/dashboard/controls/CalendarPanel.qml
-@@ -0,0 +1,1285 @@
+@@ -0,0 +1,1346 @@
 +pragma ComponentBehavior: Bound
 +
 +import QtQuick
@@ -982,6 +975,7 @@ index 00000000..e986ff42
 +    property bool pendingNotifications: CalendarService.notificationsEnabled
 +    property bool pendingBarIndicator: CalendarService.barIndicatorEnabled
 +    property bool pendingBarShowNextEvent: Config.calendar ? (Config.calendar.barShowNextEvent === true) : false
++    property bool pendingBarIncludeAllDay: Config.calendar ? (Config.calendar.barIncludeAllDay === true) : false
 +    property bool pendingBarAlwaysShow: Config.calendar ? (Config.calendar.barAlwaysShow === true) : false
 +    property int pendingDefaultReminder: CalendarService.defaultReminder
 +    property bool pendingSoundOnArrival: CalendarService.soundOnArrival
@@ -1009,6 +1003,7 @@ index 00000000..e986ff42
 +            || pendingGoogleClientId !== (Config.calendar.googleClientId || "")
 +            || pendingGoogleClientSecret !== (Config.calendar.googleClientSecret || "")
 +            || pendingBarShowNextEvent !== (Config.calendar.barShowNextEvent === true)
++            || pendingBarIncludeAllDay !== (Config.calendar.barIncludeAllDay === true)
 +            || pendingBarAlwaysShow !== (Config.calendar.barAlwaysShow === true);
 +    }
 +
@@ -1024,6 +1019,7 @@ index 00000000..e986ff42
 +        pendingGoogleClientId = Config.calendar.googleClientId || "";
 +        pendingGoogleClientSecret = Config.calendar.googleClientSecret || "";
 +        pendingBarShowNextEvent = Config.calendar.barShowNextEvent === true;
++        pendingBarIncludeAllDay = Config.calendar.barIncludeAllDay === true;
 +        pendingBarAlwaysShow = Config.calendar.barAlwaysShow === true;
 +    }
 +
@@ -1033,6 +1029,7 @@ index 00000000..e986ff42
 +        Config.calendar.notifications = pendingNotifications;
 +        Config.calendar.barIndicator = pendingBarIndicator;
 +        Config.calendar.barShowNextEvent = pendingBarShowNextEvent;
++        Config.calendar.barIncludeAllDay = pendingBarIncludeAllDay;
 +        Config.calendar.barAlwaysShow = pendingBarAlwaysShow;
 +        Config.calendar.defaultReminder = pendingDefaultReminder;
 +        Config.calendar.soundOnArrival = pendingSoundOnArrival;
@@ -1907,6 +1904,63 @@ index 00000000..e986ff42
 +                                        y: 2; width: 14; height: 14; radius: 7
 +                                        color: Colors.primary.hslLightness > 0.5 ? "black" : "white"
 +                                        Behavior on x { NumberAnimation { duration: 150 } }
++                                    }
++                                }
++                                background: null
++                            }
++                        }
++
++                        RowLayout {
++                            Layout.fillWidth: true
++                            spacing: 12
++
++                            ColumnLayout {
++                                Layout.fillWidth: true
++                                spacing: 4
++
++                                Text {
++                                    id: includeAllDayLabel
++                                    text: root._t("calendar.panel.bar_include_all_day", "Include all-day events")
++                                    font.family: Config.defaultFont
++                                    font.pixelSize: Styling.fontSize(-1)
++                                    color: includeAllDaySwitch.enabled ? Colors.overBackground : Colors.outline
++                                    Layout.fillWidth: true
++                                    wrapMode: Text.Wrap
++                                }
++
++                                Text {
++                                    id: includeAllDayDescription
++                                    text: root._t("calendar.panel.bar_include_all_day_description", "Show all-day events in the upcoming-event widget. Meetings in progress take priority.")
++                                    font.family: Config.defaultFont
++                                    font.pixelSize: Styling.fontSize(-2)
++                                    color: Colors.outline
++                                    Layout.fillWidth: true
++                                    wrapMode: Text.Wrap
++                                }
++                            }
++
++                            Switch {
++                                id: includeAllDaySwitch
++                                objectName: "barIncludeAllDaySwitch"
++                                enabled: root.pendingBarIndicator && root.pendingBarShowNextEvent
++                                checked: root.pendingBarIncludeAllDay
++                                onToggled: root.pendingBarIncludeAllDay = checked
++                                Accessible.name: includeAllDayLabel.text
++                                Accessible.description: includeAllDayDescription.text
++                                focusPolicy: Qt.StrongFocus
++                                indicator: Rectangle {
++                                    implicitWidth: 36
++                                    implicitHeight: 18
++                                    radius: 9
++                                    color: includeAllDaySwitch.checked && includeAllDaySwitch.enabled ? Colors.primary : Colors.surfaceBright
++                                    opacity: includeAllDaySwitch.enabled ? 1 : 0.4
++                                    border.width: includeAllDaySwitch.activeFocus ? 2 : 0
++                                    border.color: Colors.overBackground
++                                    Rectangle {
++                                        x: includeAllDaySwitch.checked ? parent.width - width - 2 : 2
++                                        y: 2; width: 14; height: 14; radius: 7
++                                        color: Colors.primary.hslLightness > 0.5 ? "black" : "white"
++                                        Behavior on x { NumberAnimation { duration: Config.animDuration > 0 ? 150 : 0 } }
 +                                    }
 +                                }
 +                                background: null
@@ -6213,3 +6267,66 @@ index 00000000..0091e472
 +
 +if __name__ == "__main__":
 +    main()
+diff --git a/translations/en.json b/translations/en.json
+index 81763712..147390ef 100644
+--- a/translations/en.json
++++ b/translations/en.json
+@@ -199,6 +199,7 @@
+   "bluetooth.open_manager": "Open Blueman",
+   "bluetooth.paired": "Paired",
+   "bluetooth.scan": "Scan for devices",
++  "calendar.bar.all_day_on": "All day · %1",
+   "calendar.bar.no_events": "No events today",
+   "calendar.bar.section_past": "Past",
+   "calendar.bar.section_upcoming": "Upcoming",
+@@ -271,6 +272,8 @@
+   "calendar.panel.add_google": "+ Google OAuth",
+   "calendar.panel.back": "Back",
+   "calendar.panel.bar_indicator": "Bar indicator",
++  "calendar.panel.bar_include_all_day": "Include all-day events",
++  "calendar.panel.bar_include_all_day_description": "Show all-day events in the upcoming-event widget. Meetings in progress take priority.",
+   "calendar.panel.bar_show_next": "Show next upcoming event",
+   "calendar.panel.blink_on_arrival": "Blink icon on arrival",
+   "calendar.panel.caldav_name": "Account name (optional)",
+diff --git a/translations/ru.json b/translations/ru.json
+index 60d0143d..130e4373 100644
+--- a/translations/ru.json
++++ b/translations/ru.json
+@@ -203,6 +203,7 @@
+   "bluetooth.open_manager": "Открыть Blueman",
+   "bluetooth.paired": "Сопряжено",
+   "bluetooth.scan": "Поиск устройств",
++  "calendar.bar.all_day_on": "Весь день · %1",
+   "calendar.bar.no_events": "Нет событий сегодня",
+   "calendar.bar.section_past": "Прошедшие",
+   "calendar.bar.section_upcoming": "Предстоящие",
+@@ -275,6 +276,8 @@
+   "calendar.panel.add_google": "+ Google OAuth",
+   "calendar.panel.back": "Назад",
+   "calendar.panel.bar_indicator": "Индикатор на панели",
++  "calendar.panel.bar_include_all_day": "Учитывать события на весь день",
++  "calendar.panel.bar_include_all_day_description": "Показывать события на весь день в виджете ближайшего события. Текущая встреча имеет приоритет.",
+   "calendar.panel.bar_show_next": "Показывать следующее событие",
+   "calendar.panel.blink_on_arrival": "Мигать иконкой при событии",
+   "calendar.panel.caldav_name": "Название аккаунта (необязательно)",
+diff --git a/translations/es.json b/translations/es.json
+index 3392755e..947f393f 100644
+--- a/translations/es.json
++++ b/translations/es.json
+@@ -199,6 +199,7 @@
+   "bluetooth.open_manager": "Abrir Blueman",
+   "bluetooth.paired": "Vinculado",
+   "bluetooth.scan": "Buscar dispositivos",
++  "calendar.bar.all_day_on": "Todo el día · %1",
+   "calendar.bar.no_events": "Sin eventos hoy",
+   "calendar.bar.section_past": "Pasados",
+   "calendar.bar.section_upcoming": "Próximos",
+@@ -271,6 +272,8 @@
+   "calendar.panel.add_google": "+ Google OAuth",
+   "calendar.panel.back": "Volver",
+   "calendar.panel.bar_indicator": "Indicador en barra",
++  "calendar.panel.bar_include_all_day": "Incluir eventos de todo el día",
++  "calendar.panel.bar_include_all_day_description": "Mostrar eventos de todo el día en el indicador del próximo evento. Las reuniones en curso tienen prioridad.",
+   "calendar.panel.bar_show_next": "Mostrar próximo evento",
+   "calendar.panel.blink_on_arrival": "Parpadear icono al llegar",
+   "calendar.panel.caldav_name": "Nombre de cuenta (opcional)",

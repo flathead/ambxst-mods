@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 - 2026-10-15
+
+- Add **Include all-day events** under Settings > System > Calendar > Settings. Enable **Show next upcoming event** to use it.
+- Show active all-day events before future meetings. Give meetings in progress priority.
+- Show **All day** for an active event and its date for a future event. Respect local dates and exclusive end dates for multi-day events.
+- Refresh the selected event and today's list on the bar's clock tick.
+- Add date-selection tests and QML checks for keyboard input, settings persistence and translated labels.
+
 ## 1.1.4 - 2026-10-15
 
 - Initialize calendar defaults independently of the base preset copier, preserving compatibility with Ambxst 1.3.8 through 1.3.12.

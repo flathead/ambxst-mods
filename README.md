@@ -32,6 +32,11 @@ should be composed. Dependencies always load before the packages that require
 them. When two packages add something at the same place in a file, load order
 decides which block comes first.
 
+[Calendar integration](packages/calendar-integration/README.md) 1.2.0 adds
+**Include all-day events** to the upcoming-event bar widget. Enable it under
+**Settings > System > Calendar > Settings** and save. Meetings in progress take
+priority over active all-day events.
+
 Calendar support needs `python3`, `notify-send`, and `xdg-open`. Google Calendar
 accounts use `google-auth`, `google-auth-oauthlib`, and `google-api-python-client`;
 CalDAV accounts use `caldav`, `icalendar`, and `requests`. Install the modules for

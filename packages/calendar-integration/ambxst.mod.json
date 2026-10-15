@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "id": "community.calendar-integration",
   "name": "Calendar integration",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "Adds Google Calendar and CalDAV accounts, event editing, reminders, and bar integration.",
   "license": "AGPL-3.0-only",
   "author": "flathead",
@@ -36,6 +36,11 @@
     "Plays reminder sounds, including an optional audio file selected by the user"
   ],
   "operations": [
+    {
+      "type": "overlay",
+      "source": "payload/modules/services/CalendarEventSelection.js",
+      "target": "modules/services/CalendarEventSelection.js"
+    },
     {
       "type": "patch",
       "source": "patches/feature.patch"
