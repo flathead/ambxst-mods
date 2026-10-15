@@ -45,3 +45,8 @@ releases. The Quickshell runtime regression is run locally with
 `scripts/check-launcher.py`; CI's source-composition result is not a substitute
 for that runtime check. New upstream releases may still require adaptation;
 compatibility ranges and checked revisions are recorded separately.
+
+CI skips desktop-program discovery through `--skip-command-checks`. The script
+removes those requirements from temporary package copies; the report records
+that it did not check runtime commands. The dated local report includes command
+discovery on the target desktop.

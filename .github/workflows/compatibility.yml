@@ -29,9 +29,9 @@ jobs:
         working-directory: upstream/backend
         run: CGO_ENABLED=0 go build -mod=vendor -o "$RUNNER_TEMP/ambxst" ./cmd/ambxst
       - name: Check supported releases
-        run: python3 scripts/check-compatibility.py --source upstream --ambxst "$RUNNER_TEMP/ambxst" --output compatibility-releases.json
+        run: python3 scripts/check-compatibility.py --source upstream --ambxst "$RUNNER_TEMP/ambxst" --skip-command-checks --output compatibility-releases.json
       - name: Check the latest release and current development sources
-        run: python3 scripts/check-compatibility.py --source upstream --ambxst "$RUNNER_TEMP/ambxst" --refs latest HEAD --require-all --output compatibility-current.json
+        run: python3 scripts/check-compatibility.py --source upstream --ambxst "$RUNNER_TEMP/ambxst" --refs latest HEAD --require-all --skip-command-checks --output compatibility-current.json
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

@@ -541,5 +541,6 @@
       "composes": true,
       "runtimeTested": false
     }
-  ]
+  ],
+  "runtimeCommandsChecked": true
 }

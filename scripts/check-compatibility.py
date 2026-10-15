@@ -26,6 +26,8 @@ def main():
     parser.add_argument("--refs", nargs="+", default=["1.3.8", "1.3.9", "1.3.10", "1.3.11", "1.3.12"])
     parser.add_argument("--output", type=Path, help="Write the composition report as JSON")
     parser.add_argument("--require-all", action="store_true", help="Fail if any package excludes a requested base")
+    parser.add_argument("--skip-command-checks", action="store_true",
+                        help="Skip runtime command discovery in temporary package copies; check source composition")
     args = parser.parse_args()
     source = args.source.resolve()
     binary = shutil.which(args.ambxst)
@@ -53,8 +55,12 @@ def main():
         package_root = root / "data/ambxst/mods/packages"
         package_root.mkdir(parents=True)
         for package, manifest in packages:
-            shutil.copytree(package, package_root / manifest["id"],
+            destination = package_root / manifest["id"]
+            shutil.copytree(package, destination,
                             ignore=shutil.ignore_patterns("__pycache__"))
+            if args.skip_command_checks:
+                copy_manifest = {**manifest, "commands": []}
+                (destination / "ambxst.mod.json").write_text(json.dumps(copy_manifest))
 
         def check(base, selected):
             state = {"version": 1, "mods": [
@@ -104,7 +110,9 @@ def main():
                     print(report.get("details", "No diagnostic returned"), flush=True)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps({"runtimeTested": False, "results": results}, indent=2) + "\n")
+        args.output.write_text(json.dumps({"runtimeTested": False,
+                                          "runtimeCommandsChecked": not args.skip_command_checks,
+                                          "results": results}, indent=2) + "\n")
     return int(failed)
 
 

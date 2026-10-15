@@ -128,6 +128,12 @@ upstream version can expose a conflict before packages are updated. Version
 ranges below 1.4.0 allow compatible 1.3.x releases; they do not guarantee that
 every future upstream change will apply cleanly.
 
+CI uses `--skip-command-checks` for source composition because its runner has
+no Hyprland session. The script removes command requirements from temporary
+package copies and records `runtimeCommandsChecked: false` in the report. It
+keeps the source manifests intact. Run without that flag on the target desktop
+to check required programs too.
+
 ## Languages and release metadata
 
 Each package includes `CHANGELOG.md` and declares its interface language support.
